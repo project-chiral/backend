@@ -8,6 +8,8 @@ import { AppController } from './app.controller'
 import { AppService } from './app.service'
 import { EventModule } from './event/event.module'
 import { CharaModule } from './chara/chara.module'
+import { FileModule } from './file/file.module'
+import { TaskService } from './task/task.service'
 
 @Module({
   imports: [
@@ -19,8 +21,9 @@ import { CharaModule } from './chara/chara.module'
     HttpModule,
     EventModule,
     CharaModule,
+    FileModule,
   ],
   controllers: [AppController],
-  providers: [AppService, AmqpConnection],
+  providers: [AppService, TaskService, AmqpConnection],
 })
 export class AppModule {}

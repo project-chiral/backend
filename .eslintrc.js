@@ -23,7 +23,6 @@ module.exports = {
     '@typescript-eslint/no-explicit-any': 'off',
     // @nestjs/swagger需要类型标注来自动生成swagger文档
     '@typescript-eslint/no-inferrable-types': 'off',
-    'arrow-parens': ['error', 'as-needed'],
     'curly': ['error', 'all'],
     'max-statements-per-line': ['error', { max: 2, },],
     'no-console': 'warn',
