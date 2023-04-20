@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Workspace" ALTER COLUMN "origin" DROP NOT NULL,
+ALTER COLUMN "layout" DROP NOT NULL;

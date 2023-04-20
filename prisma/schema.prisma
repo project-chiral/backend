@@ -1,0 +1,200 @@
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["fullTextSearch"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ----------------------------------- 用户 --------------------------------------
+
+model User {
+  id       Int     @id @default(autoincrement())
+  username String  @unique
+  password String
+  phone    String?
+  email    String? @unique
+  avatar   String?
+  salt     String
+
+  project Project[]
+}
+
+// ---------------------------------- 事件 -------------------------------------
+
+enum EventType {
+  ATOM // 原子事件
+  COLLECTION // 集合事件
+}
+
+model Event {
+  id Int @id @default(autoincrement())
+
+  serial Int
+
+  name        String
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deleted DateTime?
+
+  unit  Int
+  start DateTime
+  end   DateTime
+
+  color String
+
+  type EventType @default(ATOM)
+
+  content   EventContent? @relation()
+  contentId Int?
+  todos     EventTodo[]
+
+  done Boolean @default(false)
+
+  unresolved Json @default("[]")
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int
+
+  @@unique([serial, projectId])
+}
+
+model EventContent {
+  id Int @id @default(autoincrement())
+
+  updatedAt DateTime @updatedAt
+
+  cover   String?
+  content String  @default("")
+
+  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId Int   @unique
+}
+
+model EventTodo {
+  id Int @id @default(autoincrement())
+
+  title   String
+  color   String?
+  checked Boolean @default(false)
+
+  Event   Event? @relation(fields: [eventId], references: [id])
+  eventId Int?
+}
+
+// ----------------------------------- 角色 & 场景 --------------------------------------
+
+model Character {
+  id Int @id @default(autoincrement())
+
+  name        String   @unique
+  alias       String[]
+  description String?
+  avatar      String?
+
+  deleted DateTime?
+
+  // 角色的生卒年
+  unit  Int?
+  start DateTime?
+  end   DateTime?
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int
+
+  @@unique([name, projectId])
+}
+
+model Scene {
+  id Int @id @default(autoincrement())
+
+  name        String   @unique
+  alias       String[]
+  description String?
+
+  deleted DateTime?
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int
+}
+
+// ----------------------------------- 世界观 -------------------------------------
+
+model Worldview {
+  id   Int    @id @default(autoincrement())
+  path String
+
+  name String
+
+  deleted DateTime?
+
+  content   WorldviewContent? @relation()
+  contentId Int?
+  project   Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int
+}
+
+model WorldviewContent {
+  id Int @id @default(autoincrement())
+
+  updatedAt DateTime @updatedAt
+
+  cover   String?
+  content String  @default("")
+
+  worldview   Worldview @relation(fields: [worldviewId], references: [id], onDelete: Cascade)
+  worldviewId Int       @unique
+}
+
+// ----------------------------------- 项目 --------------------------------------
+
+model Workspace {
+  id Int @id @default(autoincrement())
+
+  origin String?
+  layout Json?
+  lock   Boolean @default(false)
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int     @unique
+}
+
+model Settings {
+  id Int @id @default(autoincrement())
+
+  darkMode Boolean @default(false)
+  lang     String  @default("cn")
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId Int     @unique
+}
+
+model Project {
+  id Int @id @default(autoincrement())
+
+  // 事件计数，当创建新事件时递增
+  serial Int @default(0)
+
+  name        String
+  description String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  deleted DateTime?
+
+  events     Event[]
+  characters Character[]
+  scenes     Scene[]
+  worldviews Worldview[]
+
+  workspace Workspace?
+  settings  Settings?
+
+  user User[]
+}
