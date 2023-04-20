@@ -50,10 +50,13 @@
       "type": "library",
       "root": "libs/env",
       "entryFile": "index",
-      "sourceRoot": "libs/env/src",
-      "compilerOptions": {
-        "tsConfigPath": "libs/env/tsconfig.lib.json"
-      }
+      "sourceRoot": "libs/env"
+    },
+    "rmq": {
+      "type": "library",
+      "root": "libs/rmq",
+      "entryFile": "index",
+      "sourceRoot": "libs/rmq"
     }
   }
 }

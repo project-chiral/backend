@@ -1,12 +1,11 @@
 import { Module } from '@nestjs/common'
-import { EnvModule } from '@app/env'
+import { EnvModule } from 'libs/env'
+import { RmqModule } from 'libs/rmq/rmq.module'
 import { GraphController } from './graph.controller'
 import { GraphService } from './graph.service'
 
 @Module({
-  imports: [
-    EnvModule,
-  ],
+  imports: [EnvModule, RmqModule],
   controllers: [GraphController],
   providers: [GraphService],
 })

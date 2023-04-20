@@ -16,7 +16,9 @@ async function bootstrap() {
   // 允许跨域
   app.enableCors()
   // 启用验证管道，从而使class validator生效
-  app.useGlobalPipes(new ValidationPipe({ transform: true, skipMissingProperties: false }))
+  app.useGlobalPipes(
+    new ValidationPipe({ transform: true, skipMissingProperties: false })
+  )
 
   await app.listen(port.graph, '0.0.0.0')
 }
