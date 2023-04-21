@@ -10,6 +10,11 @@ import { EventModule } from './event/event.module'
 import { CharaModule } from './chara/chara.module'
 import { FileModule } from './file/file.module'
 import { TaskService } from './task/task.service'
+import { SceneModule } from './scene/scene.module'
+import { ProjectModule } from './project/project.module'
+import { WorldviewModule } from './worldview/worldview.module'
+import { OpenaiService } from './api/openai.service'
+import { AiModule } from './ai/ai.module'
 
 @Module({
   imports: [
@@ -21,9 +26,13 @@ import { TaskService } from './task/task.service'
     HttpModule,
     EventModule,
     CharaModule,
+    SceneModule,
     FileModule,
+    WorldviewModule,
+    ProjectModule,
+    AiModule,
   ],
   controllers: [AppController],
-  providers: [AppService, TaskService, AmqpConnection],
+  providers: [AppService, TaskService, OpenaiService, AmqpConnection],
 })
 export class AppModule {}

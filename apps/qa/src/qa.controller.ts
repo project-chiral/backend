@@ -6,7 +6,12 @@ export class QaController {
   constructor(private readonly qaService: QaService) {}
 
   @Get()
-  getHello(): string {
-    return this.qaService.getHello()
+  baseQA() {
+    return ''
+  }
+
+  @Get('test')
+  getTest() {
+    return 'test'
   }
 }
