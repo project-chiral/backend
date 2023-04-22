@@ -3,7 +3,7 @@ import os
 from dotenv import load_dotenv
 
 load_dotenv()
- 
+
 POSTGRES_USERNAME = os.environ["POSTGRES_USERNAME"]
 POSTGRES_PASSWORD = os.environ["POSTGRES_PASSWORD"]
 POSTGRES_HOST = os.environ["POSTGRES_HOST"]
@@ -15,3 +15,4 @@ FAISS_URL = f"postgresql://{POSTGRES_USERNAME}:{POSTGRES_PASSWORD}@{POSTGRES_HOS
 OPENAI_API_KEY = os.environ['OPENAI_API_KEY']
 
 EMBEDDING_MODEL = "ada"
+QA_MODEL = "gpt-3.5-turbo"

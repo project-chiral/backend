@@ -5,17 +5,17 @@ from worker.doc_store import DocStore, Retriever
 from worker.rmq_client import SubscribeHandler, RpcHandler
 from worker.rpc import BaseQaHandler, BaseQaReq
 from worker.subscribe import EventDoneHandler, EventDoneReq
-from worker.tools import SemanticSearchTool, RelationSearchTool, MetaSearchTool, HierarchicalSearchTool
+from worker.tools import ContentRetrievalTool, RelationRetrievalTool, MetaRetrievalTool, HierarchyRetrievalTool
 
 doc_store = DocStore()
 retriever = Retriever(doc_store)
 
 qa_agent = QaAgent(
     tools=[
-        SemanticSearchTool(retriever),
-        RelationSearchTool(doc_store),
-        MetaSearchTool(doc_store),
-        HierarchicalSearchTool(doc_store),
+        ContentRetrievalTool(retriever),
+        RelationRetrievalTool(doc_store),
+        MetaRetrievalTool(doc_store),
+        HierarchyRetrievalTool(doc_store),
     ]
 )
 
