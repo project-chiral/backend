@@ -46,14 +46,15 @@ configuration = base_api.Configuration(
 # Enter a context with an instance of the API client
 with base_api.ApiClient(configuration) as api_client:
     # Create an instance of the API class
-    api_instance = base_api.DefaultApi(api_client)
+    api_instance = base_api.CharaApi(api_client)
+    create_chara_dto = base_api.CreateCharaDto() # CreateCharaDto | 
 
     try:
-        api_response = api_instance.get_hello()
-        print("The response of DefaultApi->get_hello:\n")
+        api_response = api_instance.create(create_chara_dto)
+        print("The response of CharaApi->create:\n")
         pprint(api_response)
     except ApiException as e:
-        print("Exception when calling DefaultApi->get_hello: %s\n" % e)
+        print("Exception when calling CharaApi->create: %s\n" % e)
 
 ```
 
@@ -63,11 +64,83 @@ All URIs are relative to *http://localhost*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*DefaultApi* | [**get_hello**](base_api/docs/DefaultApi.md#get_hello) | **GET** / | 
+*CharaApi* | [**create**](base_api/docs/CharaApi.md#create) | **POST** /chara | 
+*CharaApi* | [**get**](base_api/docs/CharaApi.md#get) | **GET** /chara/{id} | 
+*CharaApi* | [**get_all**](base_api/docs/CharaApi.md#get_all) | **GET** /chara | 
+*CharaApi* | [**remove**](base_api/docs/CharaApi.md#remove) | **DELETE** /chara/{id} | 
+*CharaApi* | [**search_by_name**](base_api/docs/CharaApi.md#search_by_name) | **GET** /chara/search/name/{name} | 
+*CharaApi* | [**update**](base_api/docs/CharaApi.md#update) | **PATCH** /chara/{id} | 
+*DefaultApi* | [**get_test**](base_api/docs/DefaultApi.md#get_test) | **GET** /test | 
+*DefaultApi* | [**resolve_entities**](base_api/docs/DefaultApi.md#resolve_entities) | **POST** /ai/{id}/entities | 
+*DefaultApi* | [**summarize_desc**](base_api/docs/DefaultApi.md#summarize_desc) | **POST** /ai/{id}/summarize/desc | 
+*DefaultApi* | [**summarize_title**](base_api/docs/DefaultApi.md#summarize_title) | **POST** /ai/{id}/summarize/title | 
+*EventApi* | [**create**](base_api/docs/EventApi.md#create) | **POST** /event | 
+*EventApi* | [**create_todo**](base_api/docs/EventApi.md#create_todo) | **POST** /event/{id}/todo | 
+*EventApi* | [**get**](base_api/docs/EventApi.md#get) | **GET** /event/{id} | 
+*EventApi* | [**get_all**](base_api/docs/EventApi.md#get_all) | **GET** /event/list | 
+*EventApi* | [**get_batch**](base_api/docs/EventApi.md#get_batch) | **GET** /event/batch | 
+*EventApi* | [**get_by_range**](base_api/docs/EventApi.md#get_by_range) | **GET** /event/list/range | 
+*EventApi* | [**get_content**](base_api/docs/EventApi.md#get_content) | **GET** /event/{id}/content | 
+*EventApi* | [**get_todos**](base_api/docs/EventApi.md#get_todos) | **GET** /event/{id}/todo | 
+*EventApi* | [**remove**](base_api/docs/EventApi.md#remove) | **DELETE** /event/{id} | 
+*EventApi* | [**remove_todo**](base_api/docs/EventApi.md#remove_todo) | **DELETE** /event/todo/{id} | 
+*EventApi* | [**search_by_name**](base_api/docs/EventApi.md#search_by_name) | **GET** /event/search/name | 
+*EventApi* | [**search_content**](base_api/docs/EventApi.md#search_content) | **GET** /event/search/content | 
+*EventApi* | [**update**](base_api/docs/EventApi.md#update) | **PUT** /event/{id} | 
+*EventApi* | [**update_content**](base_api/docs/EventApi.md#update_content) | **PUT** /event/{id}/content | 
+*EventApi* | [**update_todo**](base_api/docs/EventApi.md#update_todo) | **PUT** /event/{id}/todo | 
+*FileApi* | [**remove**](base_api/docs/FileApi.md#remove) | **DELETE** /file | 
+*FileApi* | [**upload**](base_api/docs/FileApi.md#upload) | **POST** /file | 
+*FileApi* | [**upload_temp**](base_api/docs/FileApi.md#upload_temp) | **POST** /file/temp | 
+*ProjectApi* | [**create**](base_api/docs/ProjectApi.md#create) | **POST** /project | 
+*ProjectApi* | [**get**](base_api/docs/ProjectApi.md#get) | **GET** /project | 
+*ProjectApi* | [**get_settings**](base_api/docs/ProjectApi.md#get_settings) | **GET** /project/settings | 
+*ProjectApi* | [**get_workspace**](base_api/docs/ProjectApi.md#get_workspace) | **GET** /project/workspace | 
+*ProjectApi* | [**remove**](base_api/docs/ProjectApi.md#remove) | **DELETE** /project | 
+*ProjectApi* | [**update**](base_api/docs/ProjectApi.md#update) | **PUT** /project | 
+*ProjectApi* | [**update_settings**](base_api/docs/ProjectApi.md#update_settings) | **PUT** /project/settings | 
+*ProjectApi* | [**update_workspace**](base_api/docs/ProjectApi.md#update_workspace) | **PUT** /project/workspace | 
+*SceneApi* | [**create**](base_api/docs/SceneApi.md#create) | **POST** /scene | 
+*SceneApi* | [**get**](base_api/docs/SceneApi.md#get) | **GET** /scene/{id} | 
+*SceneApi* | [**remove**](base_api/docs/SceneApi.md#remove) | **DELETE** /scene/{id} | 
+*SceneApi* | [**search_by_name**](base_api/docs/SceneApi.md#search_by_name) | **GET** /scene/search/name | 
+*SceneApi* | [**update**](base_api/docs/SceneApi.md#update) | **PUT** /scene/{id} | 
+*WorldviewApi* | [**create**](base_api/docs/WorldviewApi.md#create) | **POST** /worldview | 
+*WorldviewApi* | [**get**](base_api/docs/WorldviewApi.md#get) | **GET** /worldview/{id} | 
+*WorldviewApi* | [**get_all**](base_api/docs/WorldviewApi.md#get_all) | **GET** /worldview | 
+*WorldviewApi* | [**remove**](base_api/docs/WorldviewApi.md#remove) | **DELETE** /worldview/{id} | 
+*WorldviewApi* | [**update**](base_api/docs/WorldviewApi.md#update) | **POST** /worldview/{id} | 
 
 
 ## Documentation For Models
 
+ - [CharaEntity](base_api/docs/CharaEntity.md)
+ - [CreateCharaDto](base_api/docs/CreateCharaDto.md)
+ - [CreateEventDto](base_api/docs/CreateEventDto.md)
+ - [CreateProjectDto](base_api/docs/CreateProjectDto.md)
+ - [CreateSceneDto](base_api/docs/CreateSceneDto.md)
+ - [CreateTodoDto](base_api/docs/CreateTodoDto.md)
+ - [CreateWorldviewDto](base_api/docs/CreateWorldviewDto.md)
+ - [EntityOption](base_api/docs/EntityOption.md)
+ - [EventContentEntity](base_api/docs/EventContentEntity.md)
+ - [EventEntity](base_api/docs/EventEntity.md)
+ - [EventTodoEntity](base_api/docs/EventTodoEntity.md)
+ - [ProjectEntity](base_api/docs/ProjectEntity.md)
+ - [RemoveFileDto](base_api/docs/RemoveFileDto.md)
+ - [SceneEntity](base_api/docs/SceneEntity.md)
+ - [SettingsEntity](base_api/docs/SettingsEntity.md)
+ - [UnresolvedEntityDto](base_api/docs/UnresolvedEntityDto.md)
+ - [UpdateCharaDto](base_api/docs/UpdateCharaDto.md)
+ - [UpdateContentDto](base_api/docs/UpdateContentDto.md)
+ - [UpdateEventDto](base_api/docs/UpdateEventDto.md)
+ - [UpdateProjectDto](base_api/docs/UpdateProjectDto.md)
+ - [UpdateSceneDto](base_api/docs/UpdateSceneDto.md)
+ - [UpdateSettingsDto](base_api/docs/UpdateSettingsDto.md)
+ - [UpdateTodoDto](base_api/docs/UpdateTodoDto.md)
+ - [UpdateWorkspaceDto](base_api/docs/UpdateWorkspaceDto.md)
+ - [UpdateWorldviewDto](base_api/docs/UpdateWorldviewDto.md)
+ - [WorkspaceEntity](base_api/docs/WorkspaceEntity.md)
+ - [WorldviewEntity](base_api/docs/WorldviewEntity.md)
 
 
 ## Documentation For Authorization

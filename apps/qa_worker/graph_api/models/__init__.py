@@ -14,3 +14,10 @@
 
 
 # import models into model package
+from graph_api.models.node_id_dto import NodeIdDto
+from graph_api.models.relation_entity import RelationEntity
+from graph_api.models.relation_id_dto import RelationIdDto
+from graph_api.models.relation_property import RelationProperty
+from graph_api.models.relations import Relations
+from graph_api.models.relations_entity import RelationsEntity
+from graph_api.models.relations_entity_happenedafter import RelationsEntityHAPPENEDAFTER

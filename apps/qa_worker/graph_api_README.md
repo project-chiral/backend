@@ -47,13 +47,12 @@ configuration = graph_api.Configuration(
 with graph_api.ApiClient(configuration) as api_client:
     # Create an instance of the API class
     api_instance = graph_api.DefaultApi(api_client)
+    node_id_dto = graph_api.NodeIdDto() # NodeIdDto | 
 
     try:
-        api_response = api_instance.get_hello()
-        print("The response of DefaultApi->get_hello:\n")
-        pprint(api_response)
+        api_instance.create_node(node_id_dto)
     except ApiException as e:
-        print("Exception when calling DefaultApi->get_hello: %s\n" % e)
+        print("Exception when calling DefaultApi->create_node: %s\n" % e)
 
 ```
 
@@ -63,11 +62,24 @@ All URIs are relative to *http://localhost*
 
 Class | Method | HTTP request | Description
 ------------ | ------------- | ------------- | -------------
-*DefaultApi* | [**get_hello**](graph_api/docs/DefaultApi.md#get_hello) | **GET** / | 
+*DefaultApi* | [**create_node**](graph_api/docs/DefaultApi.md#create_node) | **POST** /node | 
+*DefaultApi* | [**create_relation**](graph_api/docs/DefaultApi.md#create_relation) | **POST** /relation | 
+*DefaultApi* | [**create_relations**](graph_api/docs/DefaultApi.md#create_relations) | **POST** /relations | 
+*DefaultApi* | [**get_relations**](graph_api/docs/DefaultApi.md#get_relations) | **GET** /relations | 
+*DefaultApi* | [**get_test**](graph_api/docs/DefaultApi.md#get_test) | **GET** /test | 
+*DefaultApi* | [**remove_node**](graph_api/docs/DefaultApi.md#remove_node) | **DELETE** /node | 
+*DefaultApi* | [**remove_relation**](graph_api/docs/DefaultApi.md#remove_relation) | **DELETE** /relation | 
 
 
 ## Documentation For Models
 
+ - [NodeIdDto](graph_api/docs/NodeIdDto.md)
+ - [RelationEntity](graph_api/docs/RelationEntity.md)
+ - [RelationIdDto](graph_api/docs/RelationIdDto.md)
+ - [RelationProperty](graph_api/docs/RelationProperty.md)
+ - [Relations](graph_api/docs/Relations.md)
+ - [RelationsEntity](graph_api/docs/RelationsEntity.md)
+ - [RelationsEntityHAPPENEDAFTER](graph_api/docs/RelationsEntityHAPPENEDAFTER.md)
 
 
 ## Documentation For Authorization
