@@ -100,7 +100,8 @@
       "<rootDir>/libs/"
     ],
     "moduleNameMapper": {
-      "^@app/env(|/.*)$": "<rootDir>/libs/env/src/$1"
+      "^@app/env(|/.*)$": "<rootDir>/libs/env/src/$1",
+      "^@app/rmq(|/.*)$": "<rootDir>/libs/rmq/src/$1"
     }
   }
 }

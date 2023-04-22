@@ -7,6 +7,7 @@ import { RelationEntity } from './entities/relation.entity'
 import { RelationsEntity } from './entities/relations.entity'
 import { CypherService } from './cypher/cypher.service'
 import { RelationType, RelationSchema } from './schema'
+import { Subscribe, EntityCreateMsg, EntityRemoveMsg } from '@app/rmq/index'
 
 @Injectable()
 export class GraphService {
@@ -75,5 +76,19 @@ export class GraphService {
     `.run()[0]
 
     return plainToInstance(NodeEntity, query?.n)
+  }
+
+  @Subscribe('amq.direct', 'entity_create')
+  async handleEntityCreate({ type, ids, projectId }: EntityCreateMsg) {
+    // TODO
+  }
+
+  @Subscribe('amq.direct', 'entity_remove')
+  async handleEntityRemove({ type, ids }: EntityRemoveMsg) {
+    await this.cypherService.execute`
+    match (n:${type})
+    where n.id in ${ids}
+    detach delete n
+    `.run()
   }
 }

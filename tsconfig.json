@@ -20,12 +20,12 @@
     "resolveJsonModule": true,
     "esModuleInterop": true,
     "paths": {
-      "@app/env": [
-        "libs/env/src"
-      ],
       "@app/env/*": [
-        "libs/env/src/*"
-      ]
+        "libs/env/*"
+      ],
+      "@app/rmq/*": [
+        "libs/rmq/*"
+      ],
     }
   }
 }

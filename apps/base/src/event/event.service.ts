@@ -115,6 +115,7 @@ export class EventService {
 
     this.rmq.publish('', 'entity-create', {
       type: 'EVENT',
+      projectId,
       ids: [result.id],
     })
 
