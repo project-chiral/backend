@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { plainToInstance } from 'class-transformer'
 import { PrismaService } from 'nestjs-prisma'
-import { AmqpConnection } from '@nestjs-plus/rabbitmq'
 import { getProjectId } from '../utils/get-header'
 import type { UpdateContentDto } from './dto/content/update-content.dto'
 import type { CreateEventDto } from './dto/event/create-event.dto'
@@ -12,12 +11,13 @@ import { EventTodoEntity } from './entities/event-todo.entity'
 import type { CreateTodoDto } from './dto/todo/create-todo.dto'
 import type { UpdateTodoDto } from './dto/todo/update-todo.dto'
 import type { GetAllEventQueryDto } from './dto/event/get-all-event-query-dto'
+import { RmqService } from '@app/rmq/rmq.service'
 
 @Injectable()
 export class EventService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly rmq: AmqpConnection
+    private readonly rmqService: RmqService
   ) {}
 
   // ---------------------------------- event ---------------------------------
@@ -113,7 +113,7 @@ export class EventService {
       },
     })
 
-    this.rmq.publish('', 'entity-create', {
+    this.rmqService.publish('amq.direct', 'entity_create', {
       type: 'EVENT',
       projectId,
       ids: [result.id],
@@ -132,7 +132,10 @@ export class EventService {
     })
 
     if (dto.done !== undefined) {
-      this.rmq.publish('', 'event-done', { done: dto.done, id })
+      this.rmqService.publish('amq.direct', 'event_done', {
+        done: dto.done,
+        id,
+      })
     }
 
     return plainToInstance(EventEntity, result)
@@ -144,7 +147,7 @@ export class EventService {
       where: { id },
     })
 
-    this.rmq.publish('', 'entity-remove', {
+    this.rmqService.publish('amq.direct', 'entity_remove', {
       type: 'EVENT',
       ids: [result.id],
     })

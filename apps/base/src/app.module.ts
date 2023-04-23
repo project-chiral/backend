@@ -15,6 +15,7 @@ import { ProjectModule } from './project/project.module'
 import { WorldviewModule } from './worldview/worldview.module'
 import { OpenaiService } from './api/openai.service'
 import { AiModule } from './ai/ai.module'
+import { RequestContextModule } from 'nestjs-request-context'
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { AiModule } from './ai/ai.module'
       isGlobal: true,
     }),
     RmqModule,
+    RequestContextModule,
     HttpModule,
     EventModule,
     CharaModule,

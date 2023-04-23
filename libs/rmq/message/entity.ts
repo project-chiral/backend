@@ -1,10 +1,10 @@
-export class EntityCreateMsg {
+export interface EntityCreateMsg {
   type: 'EVENT' | 'CHARA' | 'SCENE'
   ids: number[]
   projectId: number
 }
 
-export class EntityRemoveMsg {
+export interface EntityRemoveMsg {
   type: 'EVENT' | 'CHARA' | 'SCENE'
   ids: number[]
 }

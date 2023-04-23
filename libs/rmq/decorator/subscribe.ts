@@ -1,12 +1,6 @@
 import { RabbitSubscribe } from '@nestjs-plus/rabbitmq'
 import { RmqMsgQueue } from '../message'
-
-type ExchangeType =
-  | 'amq.direct'
-  | 'amq.fanout'
-  | 'amq.headers'
-  | 'amq.match'
-  | 'amq.topic'
+import { ExchangeType } from '../types'
 
 export const Subscribe = (exchange: ExchangeType, routingKey: RmqMsgQueue) =>
   RabbitSubscribe({
