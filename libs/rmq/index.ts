@@ -1,3 +1,3 @@
 export * from './rmq.module'
-export * from './message'
+export * from './subscribe'
 export * from './decorator'

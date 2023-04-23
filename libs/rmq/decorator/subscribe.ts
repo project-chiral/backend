@@ -1,8 +1,11 @@
 import { RabbitSubscribe } from '@nestjs-plus/rabbitmq'
-import { RmqMsgQueue } from '../message'
+import { RmqSubscribeKeys } from '../subscribe'
 import { ExchangeType } from '../types'
 
-export const Subscribe = (exchange: ExchangeType, routingKey: RmqMsgQueue) =>
+export const Subscribe = (
+  exchange: ExchangeType,
+  routingKey: RmqSubscribeKeys
+) =>
   RabbitSubscribe({
     exchange,
     routingKey,

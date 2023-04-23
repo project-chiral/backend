@@ -1,26 +1,27 @@
 import { AmqpConnection } from '@nestjs-plus/rabbitmq'
 import { Injectable } from '@nestjs/common'
 import { ExchangeType } from './types'
-import { RmqMsgQueue, RmqMsgTypes } from './message'
+import { RmqSubscribeKeys, RmqSubscribeTypes } from './subscribe'
+import { RmqRpcKeys, RmqRpcTypes } from './rpc'
 
 @Injectable()
 export class RmqService {
   constructor(private readonly rmq: AmqpConnection) {}
 
-  async publish<K extends RmqMsgQueue>(
+  async publish<K extends RmqSubscribeKeys>(
     exchange: ExchangeType,
     routingKey: K,
-    msg: RmqMsgTypes[K]
+    msg: RmqSubscribeTypes[K]
   ) {
     this.rmq.publish(exchange, routingKey, msg)
   }
 
-  async request<T, P>(
+  async request<K extends RmqRpcKeys>(
     exchange: ExchangeType,
-    routingKey: RmqMsgQueue,
-    payload: P
-  ): Promise<T> {
-    return this.rmq.request<T>({
+    routingKey: K,
+    payload: RmqRpcTypes[K]['req']
+  ) {
+    return this.rmq.request<RmqRpcTypes[K]['res']>({
       exchange,
       routingKey,
       payload,

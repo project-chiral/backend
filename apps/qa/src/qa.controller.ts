@@ -1,17 +1,13 @@
-import { Controller, Get } from '@nestjs/common'
+import { Body, Controller, Post } from '@nestjs/common'
 import { QaService } from './qa.service'
+import { BaseQaDto } from './dto/base-qa.dto'
 
 @Controller()
 export class QaController {
   constructor(private readonly qaService: QaService) {}
 
-  @Get()
-  baseQA() {
-    return ''
-  }
-
-  @Get('test')
-  getTest() {
-    return 'test'
+  @Post('')
+  baseQA(@Body() dto: BaseQaDto) {
+    return this.qaService.baseQA(dto)
   }
 }
