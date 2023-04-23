@@ -22,6 +22,9 @@ import { RequestContextModule } from 'nestjs-request-context'
     EnvModule,
     PrismaModule.forRoot({
       isGlobal: true,
+      prismaServiceOptions: {
+        middlewares: [],
+      },
     }),
     RmqModule,
     RequestContextModule,

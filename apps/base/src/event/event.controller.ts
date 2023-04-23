@@ -18,6 +18,7 @@ import { CreateTodoDto } from './dto/todo/create-todo.dto'
 import { UpdateTodoDto } from './dto/todo/update-todo.dto'
 import { EventService } from './event.service'
 import { GetEventBatchDto } from './dto/event/get-event-batch.dto'
+import { ToggleEventDoneDto } from './dto/event/toggle-event-done.dto'
 
 @ApiTags('event')
 @Controller('event')
@@ -64,6 +65,11 @@ export class EventController {
   @Delete(':id')
   remove(@Param('id') id: number) {
     return this.eventService.remove(id)
+  }
+
+  @Put(':id/done')
+  toggleDone(@Param('id') id: number, @Body() dto: ToggleEventDoneDto) {
+    return this.eventService.toggleDone(id, dto)
   }
 
   // --------------------------------- content --------------------------------

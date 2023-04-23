@@ -12,6 +12,7 @@ import type { CreateTodoDto } from './dto/todo/create-todo.dto'
 import type { UpdateTodoDto } from './dto/todo/update-todo.dto'
 import type { GetAllEventQueryDto } from './dto/event/get-all-event-query-dto'
 import { RmqService } from '@app/rmq/rmq.service'
+import { ToggleEventDoneDto } from './dto/event/toggle-event-done.dto'
 
 @Injectable()
 export class EventService {
@@ -123,20 +124,36 @@ export class EventService {
   }
 
   async update(id: number, dto: UpdateEventDto) {
-    const result = await this.prismaService.event.update({
-      where: { id },
-      data: {
-        ...dto,
-        unresolved: dto.unresolved as object,
-      },
+    const result = await this.prismaService.$transaction(async (prisma) => {
+      // 如果事件标记为done则不允许修改
+      const event = await prisma.event.findUniqueOrThrow({
+        where: { id },
+      })
+      if (event.done) {
+        return event
+      }
+      return await prisma.event.update({
+        where: { id },
+        data: {
+          ...dto,
+          unresolved: dto.unresolved as object,
+        },
+      })
     })
 
-    if (dto.done !== undefined) {
-      this.rmqService.publish('amq.direct', 'event_done', {
-        done: dto.done,
-        id,
-      })
-    }
+    return plainToInstance(EventEntity, result)
+  }
+
+  async toggleDone(id: number, { done }: ToggleEventDoneDto) {
+    const result = await this.prismaService.event.update({
+      where: { id },
+      data: { done },
+    })
+
+    this.rmqService.publish('amq.direct', 'event_done', {
+      id,
+      done,
+    })
 
     return plainToInstance(EventEntity, result)
   }
