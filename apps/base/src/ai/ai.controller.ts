@@ -1,4 +1,4 @@
-import { Body, Controller, Param, Post } from '@nestjs/common'
+import { Body, Controller, Get, Param, Post } from '@nestjs/common'
 import { AiService } from './ai.service'
 import { UnresolvedEntityDto } from './dto/unresolved.dto'
 import { SummarizeDescParams } from './summarize/summarize'
@@ -21,5 +21,10 @@ export class AiController {
   resolveEntities(@Param('id') id: number) {
     // TODO
     return [] as UnresolvedEntityDto[]
+  }
+
+  @Get('query')
+  generateQuery() {
+    return this.aiService.generateQuery()
   }
 }

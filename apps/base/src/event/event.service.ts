@@ -51,6 +51,26 @@ export class EventService {
   }
 
   /**
+   * 随机获取一个事件
+   */
+  async getRandom() {
+    const projectId = getProjectId()
+    const count = await this.prismaService.event.count({
+      where: { projectId },
+    })
+
+    const skip = Math.floor(Math.random() * count)
+
+    const event = await this.prismaService.event.findFirst({
+      where: { projectId },
+      orderBy: { id: 'desc' },
+      skip,
+    })
+
+    return plainToInstance(EventEntity, event)
+  }
+
+  /**
    * 根据时间范围或给定id列表获取事件，将二者的并集返回
    * @param range 事件发生的时间范围
    * @param ids 事件的id列表

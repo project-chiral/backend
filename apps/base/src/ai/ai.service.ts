@@ -7,6 +7,7 @@ import {
 } from './summarize/summarize'
 import { EventService } from '../event/event.service'
 import { ProjectService } from '../project/project.service'
+import { QueryGeneratePrompt } from './query_generate'
 
 @Injectable()
 export class AiService {
@@ -27,17 +28,10 @@ export class AiService {
 
   async summarizeTitle(id: number) {
     const baseParams = await this._BaseParams(id)
-    const {
-      data: {
-        choices: [{ text }],
-      },
-    } = await this.openaiService.createCompletion({
-      model: 'gpt-3.5-turbo',
-      prompt: SummarizeTitlePrompt(baseParams),
-      max_tokens: 128,
-      temperature: 0.7,
-      n: 1,
-    })
+    const text = await this.openaiService.complete(
+      SummarizeTitlePrompt(baseParams),
+      { max_tokens: 128 }
+    )
 
     await this.eventService.update(id, {
       name: text,
@@ -48,24 +42,27 @@ export class AiService {
 
   async summarizeDesc(id: number, params: SummarizeDescParams) {
     const baseParams = await this._BaseParams(id)
-    const {
-      data: {
-        choices: [{ text }],
-      },
-    } = await this.openaiService.createCompletion({
-      model: 'gpt-3.5-turbo',
-      prompt: SummarizeDescPrompt({
+    const text = await this.openaiService.complete(
+      SummarizeDescPrompt({
         ...baseParams,
         ...params,
       }),
-      max_tokens: 2048,
-      temperature: 0.7,
-      n: 1,
-    })
+      { max_tokens: 1024 }
+    )
 
-    await this.eventService.update(id, {
-      description: text,
-    })
+    return text
+  }
+
+  async generateQuery() {
+    const event = await this.eventService.getRandom()
+    const baseParams = await this._BaseParams(event.id)
+
+    const text = await this.openaiService.complete(
+      QueryGeneratePrompt({
+        ...baseParams,
+      }),
+      { max_tokens: 64 }
+    )
 
     return text
   }
