@@ -1,1 +1,1 @@
-from base_qa import BaseQaHandler, BaseQaReq, BaseQaRes
+from .base_qa import BaseQaHandler, BaseQaReq, BaseQaRes
