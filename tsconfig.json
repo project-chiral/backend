@@ -26,6 +26,12 @@
       "@app/rmq/*": [
         "libs/rmq/*"
       ],
+      "@app/utils": [
+        "libs/utils/src"
+      ],
+      "@app/utils/*": [
+        "libs/utils/src/*"
+      ]
     }
   }
 }

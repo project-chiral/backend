@@ -12,7 +12,7 @@ export class OpenaiService extends OpenAIApi {
   constructor() {
     super(
       new Configuration({
-        apiKey: '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',
+        apiKey: process.env.OPENAI_API_KEY,
       })
     )
   }
