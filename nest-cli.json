@@ -28,15 +28,6 @@
         "tsConfigPath": "apps/base/tsconfig.app.json"
       }
     },
-    "graph": {
-      "type": "application",
-      "root": "apps/graph",
-      "entryFile": "main",
-      "sourceRoot": "apps/graph/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/graph/tsconfig.app.json"
-      }
-    },
     "qa": {
       "type": "application",
       "root": "apps/qa",
@@ -65,6 +56,15 @@
       "sourceRoot": "libs/utils/src",
       "compilerOptions": {
         "tsConfigPath": "libs/utils/tsconfig.lib.json"
+      }
+    },
+    "graph": {
+      "type": "library",
+      "root": "libs/graph",
+      "entryFile": "index",
+      "sourceRoot": "libs/graph/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/graph/tsconfig.lib.json"
       }
     }
   }

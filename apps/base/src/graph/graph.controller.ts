@@ -1,3 +1,6 @@
+import { GraphService } from '@app/graph'
+import { NodeIdDto } from '@app/graph/dto/node-id.dto'
+import { RelationIdDto } from '@app/graph/dto/relation-id.dto'
 import {
   Body,
   Controller,
@@ -7,9 +10,6 @@ import {
   Post,
   Query,
 } from '@nestjs/common'
-import { GraphService } from './graph.service'
-import { NodeIdDto } from './dto/node-id.dto'
-import { RelationIdDto } from './dto/relation-id.dto'
 
 @Controller()
 export class GraphController {
