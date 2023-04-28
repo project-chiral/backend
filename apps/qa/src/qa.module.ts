@@ -9,7 +9,6 @@ import { UtilsModule } from '@app/utils'
 import { SemanticService } from './tools/semantic/semantic.service'
 import { GraphModule, GraphService } from '@app/graph'
 import { PrismaModule, PrismaService } from 'nestjs-prisma'
-import { TaskService } from './task/task.service';
 
 @Module({
   imports: [
@@ -27,7 +26,6 @@ import { TaskService } from './task/task.service';
     VecstoreService,
     SemanticService,
     PrismaService,
-    TaskService,
   ],
 })
 export class QaModule {}

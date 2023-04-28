@@ -16,8 +16,7 @@ import { WorldviewModule } from './worldview/worldview.module'
 import { OpenaiService } from './api/openai.service'
 import { AiModule } from './ai/ai.module'
 import { RequestContextModule } from 'nestjs-request-context'
-import { GraphController } from './graph/graph.controller';
-import { GraphModule } from './graph/graph.module';
+import { GraphModule } from './graph/graph.module'
 
 @Module({
   imports: [
@@ -40,7 +39,7 @@ import { GraphModule } from './graph/graph.module';
     AiModule,
     GraphModule,
   ],
-  controllers: [AppController, GraphController],
+  controllers: [AppController],
   providers: [AppService, TaskService, OpenaiService, AmqpConnection],
 })
 export class AppModule {}

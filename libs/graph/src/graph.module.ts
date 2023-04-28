@@ -7,5 +7,6 @@ import { CypherService } from './cypher/cypher.service'
 @Module({
   imports: [EnvModule, RmqModule],
   providers: [GraphService, CypherService],
+  exports: [CypherService, GraphService],
 })
 export class GraphModule {}
