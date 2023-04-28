@@ -5,10 +5,12 @@ import { QaController } from './qa.controller'
 import { QaService } from './qa.service'
 import { AgentModule } from './agent/agent.module'
 import { VecstoreService } from './vecstore/vecstore.service'
+import { UtilsModule } from '@app/utils'
+import { SemanticService } from './tools/semantic/semantic.service'
 
 @Module({
-  imports: [EnvModule, RmqModule, AgentModule],
+  imports: [EnvModule, RmqModule, AgentModule, UtilsModule],
   controllers: [QaController],
-  providers: [QaService, VecstoreService],
+  providers: [QaService, VecstoreService, SemanticService],
 })
 export class QaModule {}

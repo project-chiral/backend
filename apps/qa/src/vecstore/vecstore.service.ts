@@ -2,7 +2,7 @@ import { Subscribe } from '@app/rmq/decorator'
 import { EventDoneMsg, EntityRemoveMsg } from '@app/rmq/subscribe'
 import { Injectable } from '@nestjs/common'
 import { FilterType, Milvus } from './milvus'
-import { OpenAIEmbeddings } from 'langchain/embeddings'
+import { OpenAIEmbeddings } from 'langchain/embeddings/openai'
 import { Document } from 'langchain/document'
 
 @Injectable()
