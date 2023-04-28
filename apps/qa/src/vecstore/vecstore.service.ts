@@ -1,9 +1,9 @@
 import { Subscribe } from '@app/rmq/decorator'
 import { EventDoneMsg, EntityRemoveMsg } from '@app/rmq/subscribe'
 import { Injectable } from '@nestjs/common'
-import { FilterType, Milvus } from './milvus'
+import { Milvus } from './milvus'
 import { OpenAIEmbeddings } from 'langchain/embeddings/openai'
-import { Document } from 'langchain/document'
+import { FilterType } from './types'
 
 @Injectable()
 export class VecstoreService {
@@ -17,35 +17,39 @@ export class VecstoreService {
     this.vecStore = new Milvus(this.embeddings, {
       collectionName: '',
     })
-  }
-
-  async search(query: string, k = 10, filter: FilterType) {
-    return await this.vecStore.similaritySearchWithScore(query, k, filter)
+    this.vecStore.ensureCollection()
   }
 
   /**
-   * event done后将其content添加到vecStore中
+   * 将redis中的数据flush到milvus中
+   */
+  async flush(filter: FilterType) {
+    // TODO
+    await this.vecStore.flush()
+  }
+
+  /**
+   * event done后将其flush到milvus中
    *
-   * undone后将其从vecStore中删除
+   * undone后将其从milvus中删除
    */
   @Subscribe('amq.direct', 'event_done')
   async handleEventDone({ id, done }: EventDoneMsg) {
     if (done) {
-      await this.vecStore.addDocuments([
-        new Document({
-          metadata: { id },
-          pageContent: '',
-        }),
-      ])
+      await this.flush({
+        type: 'event',
+        ids: [id],
+      })
     } else {
       await this.vecStore.delete({
+        type: 'event',
         ids: [id],
       })
     }
   }
 
   /**
-   * event remove后将其从vecStore中删除
+   * event remove后将其从milvus中删除
    */
   @Subscribe('amq.direct', 'entity_remove')
   async handleEntityRemove({ type, ids, projectId }: EntityRemoveMsg) {
@@ -53,6 +57,7 @@ export class VecstoreService {
       return
     }
     await this.vecStore.delete({
+      type: 'event',
       ids,
       projectId,
     })

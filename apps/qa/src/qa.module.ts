@@ -7,10 +7,27 @@ import { AgentModule } from './agent/agent.module'
 import { VecstoreService } from './vecstore/vecstore.service'
 import { UtilsModule } from '@app/utils'
 import { SemanticService } from './tools/semantic/semantic.service'
+import { GraphModule, GraphService } from '@app/graph'
+import { PrismaModule, PrismaService } from 'nestjs-prisma'
+import { TaskService } from './task/task.service';
 
 @Module({
-  imports: [EnvModule, RmqModule, AgentModule, UtilsModule],
+  imports: [
+    EnvModule,
+    RmqModule,
+    AgentModule,
+    UtilsModule,
+    GraphModule,
+    PrismaModule,
+  ],
   controllers: [QaController],
-  providers: [QaService, VecstoreService, SemanticService],
+  providers: [
+    QaService,
+    GraphService,
+    VecstoreService,
+    SemanticService,
+    PrismaService,
+    TaskService,
+  ],
 })
 export class QaModule {}

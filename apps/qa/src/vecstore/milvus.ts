@@ -11,6 +11,7 @@ import {
 import { VectorStore } from 'langchain/vectorstores/base'
 import { Embeddings } from 'langchain/embeddings/base'
 import { Document } from 'langchain/document'
+import { FilterType } from './types'
 
 export interface MilvusLibArgs {
   collectionName?: string
@@ -46,11 +47,6 @@ const MILVUS_PRIMARY_FIELD_NAME = 'langchain_primaryid'
 const MILVUS_VECTOR_FIELD_NAME = 'langchain_vector'
 const MILVUS_TEXT_FIELD_NAME = 'langchain_text'
 const MILVUS_COLLECTION_NAME_PREFIX = 'langchain_col'
-
-export interface FilterType {
-  ids?: number[]
-  projectId?: number
-}
 
 export class Milvus extends VectorStore {
   FilterType: FilterType
@@ -111,9 +107,13 @@ export class Milvus extends VectorStore {
     this.client = new MilvusClient(url, args.ssl, args.username, args.password)
   }
 
-  _filterExpr({ ids, projectId }: FilterType) {
+  /**
+   * 将filter转换为boolean表达式
+   */
+  _filterExpr({ type, ids, projectId }: FilterType) {
     const expr: string[] = []
 
+    expr.push(`type == ${type}`)
     if (ids) {
       expr.push(`${this.primaryField} in [${ids}]`)
     }
@@ -121,7 +121,7 @@ export class Milvus extends VectorStore {
       expr.push(`projectId == ${projectId}`)
     }
 
-    return expr.join(' or ')
+    return expr.join(' and ')
   }
 
   async addDocuments(documents: Document[]): Promise<void> {
@@ -188,14 +188,19 @@ export class Milvus extends VectorStore {
     if (insertResp.status.error_code !== ErrorCode.SUCCESS) {
       throw new Error(`Error inserting data: ${JSON.stringify(insertResp)}`)
     }
-    await this.client.flushSync({ collection_names: [this.collectionName] })
+    await this.flush()
   }
 
-  async similaritySearchVectorWithScore(
-    query: number[],
-    k: number,
-    filter: FilterType
-  ): Promise<[Document, number][]> {
+  async hybridSearch(
+    {
+      query,
+      filter,
+    }: {
+      query?: number[]
+      filter?: FilterType
+    },
+    k: number
+  ) {
     const hasColResp = await this.client.hasCollection({
       collection_name: this.collectionName,
     })
@@ -222,18 +227,26 @@ export class Milvus extends VectorStore {
       (field) => field !== this.vectorField
     )
 
-    const searchResp = await this.client.search({
-      collection_name: this.collectionName,
-      filter: this._filterExpr(filter),
+    const searchParams = query && {
       search_params: {
         anns_field: this.vectorField,
         topk: k.toString(),
         metric_type: this.indexCreateParams.metric_type,
         params: this.indexSearchParams,
       },
-      output_fields: outputFields,
       vector_type: DataType.FloatVector,
       vectors: [query],
+    }
+
+    const queryParams = filter && {
+      expr: this._filterExpr(filter),
+    }
+
+    const searchResp = await this.client.search({
+      collection_name: this.collectionName,
+      output_fields: outputFields,
+      ...queryParams,
+      ...searchParams,
     })
     if (searchResp.status.error_code !== ErrorCode.SUCCESS) {
       throw new Error(`Error searching data: ${JSON.stringify(searchResp)}`)
@@ -260,6 +273,17 @@ export class Milvus extends VectorStore {
     return results
   }
 
+  async similaritySearchVectorWithScore(
+    query: number[],
+    k: number
+  ): Promise<[Document, number][]> {
+    return this.hybridSearch({ query }, k)
+  }
+
+  async query(filter: FilterType, k: number): Promise<[Document, number][]> {
+    return this.hybridSearch({ filter }, k)
+  }
+
   async delete(filter: FilterType) {
     const deleteResp = await this.client.deleteEntities({
       collection_name: this.collectionName,
@@ -271,6 +295,10 @@ export class Milvus extends VectorStore {
     }
 
     return deleteResp
+  }
+
+  async flush() {
+    await this.client.flushSync({ collection_names: [this.collectionName] })
   }
 
   async ensureCollection(vectors?: number[][], documents?: Document[]) {
