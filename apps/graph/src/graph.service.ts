@@ -49,9 +49,10 @@ export class GraphService {
   async removeRelation({ from, to, type }: RelationIdDto) {
     const { from: fromType, to: toType } = RelationSchema[type]
     const query = await this.cypherService.execute`
-    match (from:${fromType} ${{ id: from }})-[r:${type}]->(to:${toType} ${{
-      id: to,
-    }})
+    match 
+      (from:${fromType} ${{ id: from }})
+      -[r:${type}]->
+      (to:${toType} ${{ id: to }})
     delete r
     return r
     `.run()
@@ -80,14 +81,20 @@ export class GraphService {
 
   @Subscribe('amq.direct', 'entity_create')
   async handleEntityCreate({ type, ids, projectId }: EntityCreateMsg) {
-    // TODO
+    const props = ids.map((id) => ({ id, projectId }))
+    await this.cypherService.execute`
+    unwind ${props} as props
+    merge (n:${type})
+    set n = props
+    return n
+    `.run()
   }
 
   @Subscribe('amq.direct', 'entity_remove')
-  async handleEntityRemove({ type, ids }: EntityRemoveMsg) {
+  async handleEntityRemove({ type, ids, projectId }: EntityRemoveMsg) {
     await this.cypherService.execute`
     match (n:${type})
-    where n.id in ${ids}
+    where n.id in ${ids} or n.projectId = ${projectId}
     detach delete n
     `.run()
   }

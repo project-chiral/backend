@@ -48,12 +48,13 @@ export class VecstoreService {
    * event remove后将其从vecStore中删除
    */
   @Subscribe('amq.direct', 'entity_remove')
-  async handleEntityRemove({ type, ids }: EntityRemoveMsg) {
+  async handleEntityRemove({ type, ids, projectId }: EntityRemoveMsg) {
     if (type !== 'EVENT') {
       return
     }
     await this.vecStore.delete({
       ids,
+      projectId,
     })
   }
 }

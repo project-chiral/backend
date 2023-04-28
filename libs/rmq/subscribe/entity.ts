@@ -6,5 +6,6 @@ export interface EntityCreateMsg {
 
 export interface EntityRemoveMsg {
   type: 'EVENT' | 'CHARA' | 'SCENE'
-  ids: number[]
+  ids?: number[]
+  projectId?: number
 }

@@ -121,7 +121,7 @@ export class Milvus extends VectorStore {
       expr.push(`projectId == ${projectId}`)
     }
 
-    return expr.join(' and ')
+    return expr.join(' or ')
   }
 
   async addDocuments(documents: Document[]): Promise<void> {

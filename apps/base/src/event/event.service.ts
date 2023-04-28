@@ -165,6 +165,8 @@ export class EventService {
   }
 
   async toggleDone(id: number, { done }: ToggleEventDoneDto) {
+    const projectId = getProjectId()
+
     const result = await this.prismaService.event.update({
       where: { id },
       data: { done },
@@ -172,6 +174,7 @@ export class EventService {
 
     this.rmqService.publish('amq.direct', 'event_done', {
       id,
+      projectId,
       done,
     })
 
