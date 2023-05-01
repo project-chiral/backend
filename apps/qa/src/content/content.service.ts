@@ -1,18 +1,20 @@
-import { CACHE_MANAGER, Inject, Injectable } from '@nestjs/common'
+import { Inject, Injectable } from '@nestjs/common'
 import { VecstoreService } from '../vecstore/vecstore.service'
 import { UpdateContentDto } from './dto/update-content.dto'
 import { GetContentQueryDto } from './dto/get-content-query.dto'
 import { Subscribe } from '@app/rmq/decorator'
 import { EntityDoneMsg, EntityRemoveMsg } from '@app/rmq/subscribe'
-import { Cache } from 'cache-manager'
+import { CACHE_MANAGER } from '@nestjs/cache-manager'
 import { UtilsService } from '@app/utils'
 import { ContentEntity } from './entities/content.entity'
+import { Cache } from 'cache-manager'
+
 @Injectable()
 export class ContentService {
   constructor(
     private readonly vecstoreService: VecstoreService,
     private readonly utilsService: UtilsService,
-    @Inject(CACHE_MANAGER) private readonly cache: Cache
+    @Inject(CACHE_MANAGER) private cache: Cache
   ) {}
 
   async getContent({ type, id }: GetContentQueryDto) {
