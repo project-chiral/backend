@@ -6,7 +6,7 @@ import { BaseQaDto } from './dto/base-qa.dto'
 export class QaController {
   constructor(private readonly qaService: QaService) {}
 
-  @Post('')
+  @Post()
   baseQA(@Body() dto: BaseQaDto) {
     return this.qaService.baseQA(dto)
   }

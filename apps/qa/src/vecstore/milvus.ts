@@ -11,60 +11,27 @@ import {
 import { VectorStore } from 'langchain/vectorstores/base'
 import { Embeddings } from 'langchain/embeddings/base'
 import { Document } from 'langchain/document'
-import { FilterType } from './types'
-
-export interface MilvusLibArgs {
-  collectionName?: string
-  primaryField?: string
-  vectorField?: string
-  textField?: string
-  url?: string // db address
-  ssl?: boolean
-  username?: string
-  password?: string
-}
-
-type IndexType =
-  | 'IVF_FLAT'
-  | 'IVF_SQ8'
-  | 'IVF_PQ'
-  | 'HNSW'
-  | 'RHNSW_FLAT'
-  | 'RHNSW_SQ'
-  | 'RHNSW_PQ'
-  | 'IVF_HNSW'
-  | 'ANNOY'
-
-interface IndexParam {
-  params: { nprobe?: number; ef?: number; search_k?: number }
-}
-
-interface InsertRow {
-  [x: string]: string | number[]
-}
-
-const MILVUS_PRIMARY_FIELD_NAME = 'langchain_primaryid'
-const MILVUS_VECTOR_FIELD_NAME = 'langchain_vector'
-const MILVUS_TEXT_FIELD_NAME = 'langchain_text'
-const MILVUS_COLLECTION_NAME_PREFIX = 'langchain_col'
+import {
+  FilterType,
+  IndexParam,
+  IndexType,
+  InsertRow,
+  MILVUS_COLLECTION_NAME_PREFIX,
+  MILVUS_PRIMARY_FIELD_NAME,
+  MILVUS_TEXT_FIELD_NAME,
+  MILVUS_VECTOR_FIELD_NAME,
+  MilvusLibArgs,
+} from './types'
 
 export class Milvus extends VectorStore {
   FilterType: FilterType
-
   collectionName: string
-
   numDimensions?: number
-
   autoId?: boolean
-
   primaryField: string
-
   vectorField: string
-
   textField: string
-
   fields: string[]
-
   client: MilvusClient
 
   indexParams: Record<IndexType, IndexParam> = {
@@ -113,7 +80,9 @@ export class Milvus extends VectorStore {
   _filterExpr({ type, ids, projectId }: FilterType) {
     const expr: string[] = []
 
-    expr.push(`type == ${type}`)
+    if (type) {
+      expr.push(`type == ${type}`)
+    }
     if (ids) {
       expr.push(`${this.primaryField} in [${ids}]`)
     }
@@ -199,7 +168,7 @@ export class Milvus extends VectorStore {
       query?: number[]
       filter?: FilterType
     },
-    k: number
+    k?: number
   ) {
     const hasColResp = await this.client.hasCollection({
       collection_name: this.collectionName,
@@ -230,7 +199,7 @@ export class Milvus extends VectorStore {
     const searchParams = query && {
       search_params: {
         anns_field: this.vectorField,
-        topk: k.toString(),
+        topk: k?.toString(),
         metric_type: this.indexCreateParams.metric_type,
         params: this.indexSearchParams,
       },
@@ -275,12 +244,12 @@ export class Milvus extends VectorStore {
 
   async similaritySearchVectorWithScore(
     query: number[],
-    k: number
+    k = 10
   ): Promise<[Document, number][]> {
     return this.hybridSearch({ query }, k)
   }
 
-  async query(filter: FilterType, k: number): Promise<[Document, number][]> {
+  async query(filter: FilterType, k?: number): Promise<[Document, number][]> {
     return this.hybridSearch({ filter }, k)
   }
 

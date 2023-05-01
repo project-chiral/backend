@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common'
+import { CacheModule, Module } from '@nestjs/common'
 import { EnvModule } from 'libs/env'
 import { RmqModule } from 'libs/rmq/rmq.module'
 import { QaController } from './qa.controller'
@@ -9,6 +9,8 @@ import { UtilsModule } from '@app/utils'
 import { SemanticService } from './tools/semantic/semantic.service'
 import { GraphModule, GraphService } from '@app/graph'
 import { PrismaModule, PrismaService } from 'nestjs-prisma'
+import { ContentModule } from './content/content.module'
+import { redisStore } from 'cache-manager-redis-yet'
 
 @Module({
   imports: [
@@ -18,6 +20,15 @@ import { PrismaModule, PrismaService } from 'nestjs-prisma'
     UtilsModule,
     GraphModule,
     PrismaModule,
+    ContentModule,
+    CacheModule.registerAsync({
+      isGlobal: true,
+      useFactory: async () => ({
+        store: await redisStore({
+          url: process.env.REDIS_URL,
+        }),
+      }),
+    }),
   ],
   controllers: [QaController],
   providers: [

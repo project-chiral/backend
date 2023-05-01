@@ -135,7 +135,7 @@ export class EventService {
     })
 
     this.rmqService.publish('amq.direct', 'entity_create', {
-      type: 'EVENT',
+      type: 'event',
       projectId,
       ids: [result.id],
     })
@@ -165,16 +165,14 @@ export class EventService {
   }
 
   async toggleDone(id: number, { done }: ToggleEventDoneDto) {
-    const projectId = getProjectId()
-
     const result = await this.prismaService.event.update({
       where: { id },
       data: { done },
     })
 
-    this.rmqService.publish('amq.direct', 'event_done', {
-      id,
-      projectId,
+    this.rmqService.publish('amq.direct', 'entity_done', {
+      type: 'event',
+      ids: [id],
       done,
     })
 
@@ -188,7 +186,7 @@ export class EventService {
     })
 
     this.rmqService.publish('amq.direct', 'entity_remove', {
-      type: 'EVENT',
+      type: 'event',
       ids: [result.id],
     })
 

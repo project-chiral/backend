@@ -1,3 +1,5 @@
+import { EntityType } from '@app/rmq/types'
+
 export interface MilvusLibArgs {
   collectionName?: string
   primaryField?: string
@@ -36,5 +38,5 @@ export const MILVUS_COLLECTION_NAME_PREFIX = 'langchain_col'
 export interface FilterType {
   ids?: number[]
   projectId?: number
-  type: 'event' | 'chara' | 'worldview'
+  type?: EntityType
 }
