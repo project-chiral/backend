@@ -1,9 +1,6 @@
 import { v4 as uuidv4 } from 'uuid'
 import { MilvusClient } from '@zilliz/milvus2-sdk-node'
-import {
-  DataType,
-  DataTypeMap,
-} from '@zilliz/milvus2-sdk-node/dist/milvus/const/Milvus.js'
+import { DataType } from '@zilliz/milvus2-sdk-node/dist/milvus/const/Milvus.js'
 import {
   ErrorCode,
   FieldType,
@@ -18,9 +15,6 @@ import {
   IndexType,
   InsertRow,
   MILVUS_COLLECTION_NAME_PREFIX,
-  MILVUS_PRIMARY_FIELD_NAME,
-  MILVUS_TEXT_FIELD_NAME,
-  MILVUS_VECTOR_FIELD_NAME,
   MilvusLibArgs,
 } from './types'
 
@@ -29,9 +23,6 @@ export class Milvus extends VectorStore {
   collectionName: string
   numDimensions?: number
   autoId?: boolean
-  primaryField: string
-  vectorField: string
-  textField: string
   fields: string[]
   client: MilvusClient
 
@@ -59,11 +50,8 @@ export class Milvus extends VectorStore {
     super(embeddings, args)
     this.embeddings = embeddings
     this.collectionName = args.collectionName ?? genCollectionName()
-    this.textField = args.textField ?? MILVUS_TEXT_FIELD_NAME
 
     this.autoId = true
-    this.primaryField = args.primaryField ?? MILVUS_PRIMARY_FIELD_NAME
-    this.vectorField = args.vectorField ?? MILVUS_VECTOR_FIELD_NAME
     this.fields = []
 
     const url =
@@ -78,31 +66,84 @@ export class Milvus extends VectorStore {
   /**
    * 将filter转换为boolean表达式
    */
-  _filterExpr({ type, ids, projectId }: FilterType) {
+  _filterExpr(filter: FilterType) {
     const expr: string[] = []
 
-    if (type) {
-      expr.push(`type == ${type}`)
-    }
-    if (ids) {
-      expr.push(`${this.primaryField} in [${ids}]`)
-    }
-    if (projectId) {
-      expr.push(`projectId == ${projectId}`)
+    for (const [key, value] of Object.entries(filter)) {
+      if (typeof value === 'string' || typeof value === 'number') {
+        expr.push(`${key} == "${value}"`)
+      } else if (typeof value === 'boolean') {
+        expr.push(`${!value && 'not'} ${key}`)
+      } else if (Array.isArray(value)) {
+        expr.push(`${key} in [${value}]`)
+      }
     }
 
     return expr.join(' and ')
   }
 
   async addDocuments(documents: Doc[]): Promise<void> {
-    const texts = documents.map(({ pageContent }) => pageContent)
-    await this.addVectors(
-      await this.embeddings.embedDocuments(texts),
-      documents
+    const done: Doc[] = []
+    const undone: Doc[] = []
+
+    for (const doc of documents) {
+      if (doc.metadata.done) {
+        done.push(doc)
+      } else {
+        undone.push(doc)
+      }
+    }
+
+    const doneVecs = await this.embeddings.embedDocuments(
+      done.map((doc) => doc.pageContent)
     )
+
+    await Promise.all([
+      this.addVectors(doneVecs, done),
+      this.addVectors(Array(undone.length).fill([]), undone),
+    ])
   }
 
+  /**
+   * 将不同分区的向量和文档归类，分别插入到不同的分区
+   */
   async addVectors(vectors: number[][], documents: Doc[]): Promise<void> {
+    const partitionData: Record<
+      string,
+      { vectors: number[][]; documents: Doc[] }
+    > = {}
+
+    for (let i = 0; i < vectors.length; i++) {
+      const { type, done } = documents[i].metadata
+      const partition = `${type}_${done}`
+      if (partitionData[partition] === undefined) {
+        partitionData[partition] = {
+          vectors: [vectors[i]],
+          documents: [documents[i]],
+        }
+      } else {
+        partitionData[partition].vectors.push(vectors[i])
+        partitionData[partition].documents.push(documents[i])
+      }
+    }
+
+    await Promise.all(
+      Object.entries(partitionData).map(([partition, { vectors, documents }]) =>
+        this._addVectorPartition(vectors, documents, partition)
+      )
+    )
+
+    await this.flush()
+  }
+
+  /**
+   * 将向量和文档插入到指定分区
+   */
+  private async _addVectorPartition(
+    vectors: number[][],
+    documents: Doc[],
+    partition: string
+  ): Promise<void> {
     if (vectors.length === 0) {
       return
     }
@@ -113,25 +154,25 @@ export class Milvus extends VectorStore {
       const vec = vectors[index]
       const doc = documents[index]
       const data: InsertRow = {
-        [this.textField]: doc.pageContent,
-        [this.vectorField]: vec,
+        doc: doc.pageContent,
+        vec: vec,
       }
       this.fields.forEach((field) => {
         switch (field) {
-          case this.primaryField:
+          case 'id':
             if (!this.autoId) {
-              if (doc.metadata[this.primaryField] === undefined) {
+              if (doc.metadata['id'] === undefined) {
                 throw new Error(
                   `The Collection's primaryField is configured with autoId=false, thus its value must be provided through metadata.`
                 )
               }
-              data[field] = doc.metadata[this.primaryField]
+              data[field] = `${doc.metadata['id']}`
             }
             break
-          case this.textField:
+          case 'doc':
             data[field] = doc.pageContent
             break
-          case this.vectorField:
+          case 'vec':
             data[field] = vec
             break
           default: // metadata fields
@@ -153,12 +194,12 @@ export class Milvus extends VectorStore {
 
     const insertResp = await this.client.insert({
       collection_name: this.collectionName,
+      partition_name: partition,
       fields_data: insertDatas,
     })
     if (insertResp.status.error_code !== ErrorCode.SUCCESS) {
       throw new Error(`Error inserting data: ${JSON.stringify(insertResp)}`)
     }
-    await this.flush()
   }
 
   async hybridSearch(
@@ -180,8 +221,6 @@ export class Milvus extends VectorStore {
       )
     }
 
-    await this.grabCollectionFields()
-
     const loadResp = await this.client.loadCollectionSync({
       collection_name: this.collectionName,
     })
@@ -190,13 +229,11 @@ export class Milvus extends VectorStore {
     }
 
     // clone this.field and remove vectorField
-    const outputFields = this.fields.filter(
-      (field) => field !== this.vectorField
-    )
+    const outputFields = this.fields.filter((field) => field !== 'vec')
 
     const searchParams = params.query && {
       search_params: {
-        anns_field: this.vectorField,
+        anns_field: 'vec',
         topk: k?.toString(),
         metric_type: this.indexCreateParams.metric_type,
         params: this.indexSearchParams,
@@ -206,6 +243,7 @@ export class Milvus extends VectorStore {
     }
 
     const queryParams = params.filter && {
+      partition_names: [params.filter.type],
       expr: this._filterExpr(params.filter),
     }
 
@@ -223,7 +261,7 @@ export class Milvus extends VectorStore {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const fields = { pageContent: '', metadata: {} as DocMetadata }
       Object.keys(result).forEach((key) => {
-        if (key === this.textField) {
+        if (key === 'doc') {
           fields.pageContent = result[key]
         } else if (this.fields.includes(key)) {
           if (typeof result[key] === 'string') {
@@ -286,8 +324,6 @@ export class Milvus extends VectorStore {
         )
       }
       await this.createCollection(vectors, documents)
-    } else {
-      await this.grabCollectionFields()
     }
   }
 
@@ -298,14 +334,14 @@ export class Milvus extends VectorStore {
 
     fieldList.push(
       {
-        name: this.primaryField,
+        name: 'id',
         description: 'Primary key',
         data_type: DataType.Int64,
         is_primary_key: true,
         autoID: this.autoId,
       },
       {
-        name: this.textField,
+        name: 'doc',
         description: 'Text field',
         data_type: DataType.VarChar,
         type_params: {
@@ -313,7 +349,7 @@ export class Milvus extends VectorStore {
         },
       },
       {
-        name: this.vectorField,
+        name: 'vec',
         description: 'Vector field',
         data_type: DataType.FloatVector,
         type_params: {
@@ -339,90 +375,9 @@ export class Milvus extends VectorStore {
 
     await this.client.createIndex({
       collection_name: this.collectionName,
-      field_name: this.vectorField,
+      field_name: 'vec',
       extra_params: this.indexCreateParams,
     })
-  }
-
-  async grabCollectionFields(): Promise<void> {
-    if (!this.collectionName) {
-      throw new Error('Need collection name to grab collection fields')
-    }
-    if (
-      this.primaryField &&
-      this.vectorField &&
-      this.textField &&
-      this.fields.length > 0
-    ) {
-      return
-    }
-    const desc = await this.client.describeCollection({
-      collection_name: this.collectionName,
-    })
-    desc.schema.fields.forEach((field) => {
-      this.fields.push(field.name)
-      if (field.autoID) {
-        const index = this.fields.indexOf(field.name)
-        if (index !== -1) {
-          this.fields.splice(index, 1)
-        }
-      }
-      if (field.is_primary_key) {
-        this.primaryField = field.name
-      }
-      const dtype = DataTypeMap[field.data_type.toLowerCase()]
-      if (dtype === DataType.FloatVector || dtype === DataType.BinaryVector) {
-        this.vectorField = field.name
-      }
-
-      if (dtype === DataType.VarChar && field.name === MILVUS_TEXT_FIELD_NAME) {
-        this.textField = field.name
-      }
-    })
-  }
-
-  static async fromTexts(
-    texts: string[],
-    metadatas: object[] | object,
-    embeddings: Embeddings,
-    dbConfig?: {
-      collectionName?: string
-      url?: string
-    }
-  ): Promise<Milvus> {
-    const docs: Doc[] = []
-    for (let i = 0; i < texts.length; i += 1) {
-      const metadata = Array.isArray(metadatas) ? metadatas[i] : metadatas
-      const newDoc = new Doc({
-        pageContent: texts[i],
-        metadata,
-      })
-      docs.push(newDoc)
-    }
-    return Milvus.fromDocuments(docs, embeddings, dbConfig)
-  }
-
-  static async fromDocuments(
-    docs: Doc[],
-    embeddings: Embeddings,
-    dbConfig?: MilvusLibArgs
-  ): Promise<Milvus> {
-    const args: MilvusLibArgs = {
-      collectionName: dbConfig?.collectionName || genCollectionName(),
-      url: dbConfig?.url,
-    }
-    const instance = new this(embeddings, args)
-    await instance.addDocuments(docs)
-    return instance
-  }
-
-  static async fromExistingCollection(
-    embeddings: Embeddings,
-    dbConfig: MilvusLibArgs
-  ): Promise<Milvus> {
-    const instance = new this(embeddings, dbConfig)
-    await instance.ensureCollection()
-    return instance
   }
 }
 
