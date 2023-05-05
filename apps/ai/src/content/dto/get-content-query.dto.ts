@@ -8,3 +8,11 @@ export class GetContentQueryDto {
   @IsInt()
   id: number
 }
+
+export class GetContentsQueryDto {
+  @IsEnum(EntityEnum)
+  type: EntityType
+
+  @IsInt({ each: true })
+  ids: number[]
+}

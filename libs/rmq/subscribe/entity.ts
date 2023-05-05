@@ -6,11 +6,17 @@ export interface EntityCreateMsg {
   projectId: number
 }
 
-export type EntityDoneMsg = {
+export interface EntityDoneMsg {
   type: EntityType
   ids?: number[]
   projectId?: number
   done: boolean
+}
+
+export interface EntityUpdateMsg {
+  type: EntityType
+  ids: number[]
+  projectId: number
 }
 
 export interface EntityRemoveMsg {

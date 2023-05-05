@@ -43,6 +43,14 @@
       ],
       "@app/graph/*": [
         "libs/graph/src/*"
+      ],
+      "@app/cache": [
+        "libs/cache/src",
+        "libs/cache/src"
+      ],
+      "@app/cache/*": [
+        "libs/cache/src/*",
+        "libs/cache/src/*"
       ]
     }
   }

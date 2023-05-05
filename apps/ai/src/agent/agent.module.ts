@@ -1,10 +1,10 @@
 import { Module } from '@nestjs/common'
 import { AgentService } from './agent.service'
-import { SemanticService } from '../tools/semantic/semantic.service'
-import { VecstoreService } from '../vecstore/vecstore.service'
+import { ToolsModule } from '../tools/tools.module'
 
 @Module({
-  providers: [AgentService, SemanticService, VecstoreService],
+  imports: [ToolsModule],
+  providers: [AgentService],
   exports: [AgentService],
 })
 export class AgentModule {}

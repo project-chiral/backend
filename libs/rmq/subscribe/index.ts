@@ -1,7 +1,13 @@
-import { EntityCreateMsg, EntityDoneMsg, EntityRemoveMsg } from './entity'
+import {
+  EntityCreateMsg,
+  EntityDoneMsg,
+  EntityRemoveMsg,
+  EntityUpdateMsg,
+} from './entity'
 
 export type RmqSubscribeTypes = {
   entity_create: EntityCreateMsg
+  entity_update: EntityUpdateMsg
   entity_remove: EntityRemoveMsg
   entity_done: EntityDoneMsg
 }

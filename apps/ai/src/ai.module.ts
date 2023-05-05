@@ -4,30 +4,36 @@ import { AiService } from './ai.service'
 import { EnvModule } from 'libs/env'
 import { RmqModule } from 'libs/rmq/rmq.module'
 import { AgentModule } from './agent/agent.module'
-import { VecstoreService } from './vecstore/vecstore.service'
 import { UtilsModule } from '@app/utils'
-import { SemanticService } from './tools/semantic/semantic.service'
-import { GraphModule, GraphService } from '@app/graph'
-import { PrismaModule, PrismaService } from 'nestjs-prisma'
+import { GraphModule } from '@app/graph'
+import { PrismaModule } from 'nestjs-prisma'
 import { ContentModule } from './content/content.module'
+import { CacheModule } from '@app/cache'
+import { VecstoreModule } from './vecstore/vecstore.module'
+import { ToolsModule } from './tools/tools.module'
+import { QueryModule } from './query/query.module'
+import { BaseModule } from './base/base.module'
+import { CharaModule } from './chara/chara.module'
+import { SummarizeModule } from './summarize/summarize.module'
 
 @Module({
   imports: [
     EnvModule,
     RmqModule,
-    AgentModule,
     UtilsModule,
     GraphModule,
+    CacheModule,
+    AgentModule,
     PrismaModule,
     ContentModule,
+    VecstoreModule,
+    ToolsModule,
+    QueryModule,
+    BaseModule,
+    CharaModule,
+    SummarizeModule,
   ],
   controllers: [AiController],
-  providers: [
-    AiService,
-    GraphService,
-    VecstoreService,
-    SemanticService,
-    PrismaService,
-  ],
+  providers: [AiService],
 })
 export class AiModule {}

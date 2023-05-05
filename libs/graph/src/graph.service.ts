@@ -80,7 +80,11 @@ export class GraphService {
   }
 
   @Subscribe('amq.direct', 'entity_create')
-  async handleEntityCreate({ type, ids, projectId }: EntityCreateMsg) {
+  protected async handleEntityCreate({
+    type,
+    ids,
+    projectId,
+  }: EntityCreateMsg) {
     const props = ids.map((id) => ({ id, projectId }))
     await this.cypherService.execute`
     unwind ${props} as props
@@ -91,7 +95,11 @@ export class GraphService {
   }
 
   @Subscribe('amq.direct', 'entity_remove')
-  async handleEntityRemove({ type, ids, projectId }: EntityRemoveMsg) {
+  protected async handleEntityRemove({
+    type,
+    ids,
+    projectId,
+  }: EntityRemoveMsg) {
     await this.cypherService.execute`
     match (n:${type})
     where n.id in ${ids} or n.projectId = ${projectId}

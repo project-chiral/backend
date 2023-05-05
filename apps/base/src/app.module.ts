@@ -14,7 +14,6 @@ import { SceneModule } from './scene/scene.module'
 import { ProjectModule } from './project/project.module'
 import { WorldviewModule } from './worldview/worldview.module'
 import { OpenaiService } from './api/openai.service'
-import { AiModule } from './ai/ai.module'
 import { RequestContextModule } from 'nestjs-request-context'
 import { GraphModule } from './graph/graph.module'
 
@@ -36,7 +35,6 @@ import { GraphModule } from './graph/graph.module'
     FileModule,
     WorldviewModule,
     ProjectModule,
-    AiModule,
     GraphModule,
   ],
   controllers: [AppController],
