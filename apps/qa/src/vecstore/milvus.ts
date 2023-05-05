@@ -10,8 +10,9 @@ import {
 } from '@zilliz/milvus2-sdk-node/dist/milvus/types.js'
 import { VectorStore } from 'langchain/vectorstores/base'
 import { Embeddings } from 'langchain/embeddings/base'
-import { Document } from 'langchain/document'
 import {
+  Doc,
+  DocMetadata,
   FilterType,
   IndexParam,
   IndexType,
@@ -93,7 +94,7 @@ export class Milvus extends VectorStore {
     return expr.join(' and ')
   }
 
-  async addDocuments(documents: Document[]): Promise<void> {
+  async addDocuments(documents: Doc[]): Promise<void> {
     const texts = documents.map(({ pageContent }) => pageContent)
     await this.addVectors(
       await this.embeddings.embedDocuments(texts),
@@ -101,7 +102,7 @@ export class Milvus extends VectorStore {
     )
   }
 
-  async addVectors(vectors: number[][], documents: Document[]): Promise<void> {
+  async addVectors(vectors: number[][], documents: Doc[]): Promise<void> {
     if (vectors.length === 0) {
       return
     }
@@ -161,10 +162,7 @@ export class Milvus extends VectorStore {
   }
 
   async hybridSearch(
-    {
-      query,
-      filter,
-    }: {
+    params: {
       query?: number[]
       filter?: FilterType
     },
@@ -196,7 +194,7 @@ export class Milvus extends VectorStore {
       (field) => field !== this.vectorField
     )
 
-    const searchParams = query && {
+    const searchParams = params.query && {
       search_params: {
         anns_field: this.vectorField,
         topk: k?.toString(),
@@ -204,11 +202,11 @@ export class Milvus extends VectorStore {
         params: this.indexSearchParams,
       },
       vector_type: DataType.FloatVector,
-      vectors: [query],
+      vectors: [params.query],
     }
 
-    const queryParams = filter && {
-      expr: this._filterExpr(filter),
+    const queryParams = params.filter && {
+      expr: this._filterExpr(params.filter),
     }
 
     const searchResp = await this.client.search({
@@ -220,10 +218,10 @@ export class Milvus extends VectorStore {
     if (searchResp.status.error_code !== ErrorCode.SUCCESS) {
       throw new Error(`Error searching data: ${JSON.stringify(searchResp)}`)
     }
-    const results: [Document, number][] = []
+    const results: [Doc, number][] = []
     searchResp.results.forEach((result) => {
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const fields = { pageContent: '', metadata: {} as Record<string, any> }
+      const fields = { pageContent: '', metadata: {} as DocMetadata }
       Object.keys(result).forEach((key) => {
         if (key === this.textField) {
           fields.pageContent = result[key]
@@ -236,7 +234,7 @@ export class Milvus extends VectorStore {
           }
         }
       })
-      results.push([new Document(fields), result.score])
+      results.push([new Doc(fields), result.score])
     })
 
     return results
@@ -245,17 +243,18 @@ export class Milvus extends VectorStore {
   async similaritySearchVectorWithScore(
     query: number[],
     k = 10
-  ): Promise<[Document, number][]> {
+  ): Promise<[Doc, number][]> {
     return this.hybridSearch({ query }, k)
   }
 
-  async query(filter: FilterType, k?: number): Promise<[Document, number][]> {
+  async query(filter: FilterType, k?: number): Promise<[Doc, number][]> {
     return this.hybridSearch({ filter }, k)
   }
 
   async delete(filter: FilterType) {
     const deleteResp = await this.client.deleteEntities({
       collection_name: this.collectionName,
+      partition_name: filter.type,
       expr: this._filterExpr(filter),
     })
 
@@ -270,7 +269,7 @@ export class Milvus extends VectorStore {
     await this.client.flushSync({ collection_names: [this.collectionName] })
   }
 
-  async ensureCollection(vectors?: number[][], documents?: Document[]) {
+  async ensureCollection(vectors?: number[][], documents?: Doc[]) {
     const hasColResp = await this.client.hasCollection({
       collection_name: this.collectionName,
     })
@@ -292,10 +291,7 @@ export class Milvus extends VectorStore {
     }
   }
 
-  async createCollection(
-    vectors: number[][],
-    documents: Document[]
-  ): Promise<void> {
+  async createCollection(vectors: number[][], documents: Doc[]): Promise<void> {
     const fieldList: FieldType[] = []
 
     fieldList.push(...createFieldTypeForMetadata(documents))
@@ -394,10 +390,10 @@ export class Milvus extends VectorStore {
       url?: string
     }
   ): Promise<Milvus> {
-    const docs: Document[] = []
+    const docs: Doc[] = []
     for (let i = 0; i < texts.length; i += 1) {
       const metadata = Array.isArray(metadatas) ? metadatas[i] : metadatas
-      const newDoc = new Document({
+      const newDoc = new Doc({
         pageContent: texts[i],
         metadata,
       })
@@ -407,7 +403,7 @@ export class Milvus extends VectorStore {
   }
 
   static async fromDocuments(
-    docs: Document[],
+    docs: Doc[],
     embeddings: Embeddings,
     dbConfig?: MilvusLibArgs
   ): Promise<Milvus> {
@@ -430,7 +426,7 @@ export class Milvus extends VectorStore {
   }
 }
 
-function createFieldTypeForMetadata(documents: Document[]): FieldType[] {
+function createFieldTypeForMetadata(documents: Doc[]): FieldType[] {
   const sampleMetadata = documents[0].metadata
   let textFieldMaxLength = 0
   let jsonFieldMaxLength = 0
@@ -509,7 +505,7 @@ function genCollectionName(): string {
   return `${MILVUS_COLLECTION_NAME_PREFIX}_${uuidv4().replaceAll('-', '')}`
 }
 
-function getTextFieldMaxLength(documents: Document[]) {
+function getTextFieldMaxLength(documents: Doc[]) {
   let textMaxLength = 0
   // eslint-disable-next-line no-plusplus
   for (let i = 0; i < documents.length; i++) {

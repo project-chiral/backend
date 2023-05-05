@@ -1,4 +1,5 @@
 import { EntityType } from '@app/rmq/types'
+import { Document } from 'langchain/document'
 
 export interface MilvusLibArgs {
   collectionName?: string
@@ -40,3 +41,10 @@ export interface FilterType {
   projectId?: number
   type?: EntityType
 }
+
+export interface DocMetadata {
+  [MILVUS_PRIMARY_FIELD_NAME]: string
+  type: EntityType
+}
+
+export class Doc extends Document<DocMetadata> {}
