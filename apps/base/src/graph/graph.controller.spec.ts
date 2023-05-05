@@ -1,18 +1,18 @@
-import { Test, TestingModule } from '@nestjs/testing';
-import { GraphController } from './graph.controller';
+import { Test, TestingModule } from '@nestjs/testing'
+import { GraphController } from './graph.controller'
 
 describe('GraphController', () => {
-  let controller: GraphController;
+  let controller: GraphController
 
   beforeEach(async () => {
     const module: TestingModule = await Test.createTestingModule({
       controllers: [GraphController],
-    }).compile();
+    }).compile()
 
-    controller = module.get<GraphController>(GraphController);
-  });
+    controller = module.get<GraphController>(GraphController)
+  })
 
   it('should be defined', () => {
-    expect(controller).toBeDefined();
-  });
-});
+    expect(controller).toBeDefined()
+  })
+})

@@ -2,10 +2,10 @@ import { NestFactory } from '@nestjs/core'
 import port from 'config/port.json'
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger'
 import { ValidationPipe } from '@nestjs/common'
-import { QaModule } from './qa.module'
+import { AiModule } from './ai.module'
 
 async function bootstrap() {
-  const app = await NestFactory.create(QaModule)
+  const app = await NestFactory.create(AiModule)
 
   const config = new DocumentBuilder().addBearerAuth().build()
   const document = SwaggerModule.createDocument(app, config, {
@@ -20,6 +20,6 @@ async function bootstrap() {
     new ValidationPipe({ transform: true, skipMissingProperties: false })
   )
 
-  await app.listen(port.qa, '0.0.0.0')
+  await app.listen(port.ai, '0.0.0.0')
 }
 bootstrap()

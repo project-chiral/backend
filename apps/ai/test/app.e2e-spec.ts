@@ -1,15 +1,14 @@
-import type { TestingModule } from '@nestjs/testing'
-import { Test } from '@nestjs/testing'
-import type { INestApplication } from '@nestjs/common'
+import { Test, TestingModule } from '@nestjs/testing'
+import { INestApplication } from '@nestjs/common'
 import * as request from 'supertest'
-import { QaModule } from './../src/qa.module'
+import { AiModule } from './../src/ai.module'
 
-describe('QaController (e2e)', () => {
+describe('AiController (e2e)', () => {
   let app: INestApplication
 
   beforeEach(async () => {
     const moduleFixture: TestingModule = await Test.createTestingModule({
-      imports: [QaModule],
+      imports: [AiModule],
     }).compile()
 
     app = moduleFixture.createNestApplication()

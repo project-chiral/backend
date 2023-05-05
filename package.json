@@ -7,10 +7,10 @@
   "license": "UNLICENSED",
   "scripts": {
     "build:base": "NODE_ENV=production nest build base",
-    "build:qa": "NODE_ENV=production nest build qa",
+    "build:ai": "NODE_ENV=production nest build ai",
     "build": "NODE_ENV=production conc pnpm:build:*",
     "dev:base": "NODE_ENV=development nest start base --watch",
-    "dev:qa": "NODE_ENV=development nest start qa --watch",
+    "dev:ai": "NODE_ENV=development nest start ai --watch",
     "dev": "NODE_ENV=development conc --kill-others pnpm:dev:*",
     "deploy": "pm2 startOrRestart process.json",
     "lint": "eslint '{apps,packages,libs}/**/*.ts' --fix",

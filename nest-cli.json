@@ -28,13 +28,13 @@
         "tsConfigPath": "apps/base/tsconfig.app.json"
       }
     },
-    "qa": {
+    "ai": {
       "type": "application",
-      "root": "apps/qa",
+      "root": "apps/ai",
       "entryFile": "main",
-      "sourceRoot": "apps/qa/src",
+      "sourceRoot": "apps/ai/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/qa/tsconfig.app.json"
+        "tsConfigPath": "apps/ai/tsconfig.app.json"
       }
     },
     "env": {

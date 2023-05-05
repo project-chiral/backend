@@ -1,8 +1,8 @@
 import { Module } from '@nestjs/common'
+import { AiController } from './ai.controller'
+import { AiService } from './ai.service'
 import { EnvModule } from 'libs/env'
 import { RmqModule } from 'libs/rmq/rmq.module'
-import { QaController } from './qa.controller'
-import { QaService } from './qa.service'
 import { AgentModule } from './agent/agent.module'
 import { VecstoreService } from './vecstore/vecstore.service'
 import { UtilsModule } from '@app/utils'
@@ -21,13 +21,13 @@ import { ContentModule } from './content/content.module'
     PrismaModule,
     ContentModule,
   ],
-  controllers: [QaController],
+  controllers: [AiController],
   providers: [
-    QaService,
+    AiService,
     GraphService,
     VecstoreService,
     SemanticService,
     PrismaService,
   ],
 })
-export class QaModule {}
+export class AiModule {}
