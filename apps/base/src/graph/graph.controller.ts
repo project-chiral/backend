@@ -10,8 +10,10 @@ import {
   Post,
   Query,
 } from '@nestjs/common'
+import { ApiTags } from '@nestjs/swagger'
 
-@Controller()
+@ApiTags('graph')
+@Controller('graph')
 export class GraphController {
   constructor(private readonly graphService: GraphService) {}
 
