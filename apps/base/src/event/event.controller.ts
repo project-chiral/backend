@@ -9,7 +9,6 @@ import {
   Query,
 } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
-import { UpdateContentDto } from './dto/content/update-content.dto'
 import { CreateEventDto } from './dto/event/create-event.dto'
 import { GetAllEventQueryDto } from './dto/event/get-all-event-query-dto'
 import { GetEventsByRangeQueryDto } from './dto/event/get-events-by-range-query.dto'
@@ -18,7 +17,7 @@ import { CreateTodoDto } from './dto/todo/create-todo.dto'
 import { UpdateTodoDto } from './dto/todo/update-todo.dto'
 import { EventService } from './event.service'
 import { GetEventBatchDto } from './dto/event/get-event-batch.dto'
-import { ToggleEventDoneDto } from './dto/event/toggle-event-done.dto'
+import { ToggleDoneDto } from '../dto/toggle-done.dto'
 
 @ApiTags('event')
 @Controller('event')
@@ -68,25 +67,8 @@ export class EventController {
   }
 
   @Put(':id/done')
-  toggleDone(@Param('id') id: number, @Body() dto: ToggleEventDoneDto) {
+  toggleDone(@Param('id') id: number, @Body() dto: ToggleDoneDto) {
     return this.eventService.toggleDone(id, dto)
-  }
-
-  // --------------------------------- content --------------------------------
-
-  @Get(':id/content')
-  getContent(@Param('id') id: number) {
-    return this.eventService.getContent(id)
-  }
-
-  @Put(':id/content')
-  updateContent(@Param('id') id: number, @Body() dto: UpdateContentDto) {
-    return this.eventService.updateContent(id, dto)
-  }
-
-  @Get('search/content')
-  searchContent(@Query('text') text: string) {
-    return this.eventService.searchContent(text)
   }
 
   // ---------------------------------- todo ----------------------------------

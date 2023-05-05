@@ -23,8 +23,10 @@ import { SummarizeModule } from './summarize/summarize.module'
     UtilsModule,
     GraphModule,
     CacheModule,
+    PrismaModule.forRoot({
+      isGlobal: true,
+    }),
     AgentModule,
-    PrismaModule,
     ContentModule,
     VecstoreModule,
     ToolsModule,

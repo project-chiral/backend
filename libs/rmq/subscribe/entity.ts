@@ -6,21 +6,31 @@ export interface EntityCreateMsg {
   projectId: number
 }
 
-export interface EntityDoneMsg {
-  type: EntityType
-  ids?: number[]
-  projectId?: number
-  done: boolean
-}
-
 export interface EntityUpdateMsg {
   type: EntityType
   ids: number[]
   projectId: number
 }
 
+/**
+ * 实体done状态变化消息
+ *
+ * projectId和ids为or关系
+ */
+export interface EntityDoneMsg {
+  type?: EntityType
+  ids?: number[]
+  projectId?: number
+  done: boolean
+}
+
+/**
+ * 实体移除消息
+ *
+ * projectId和ids为or关系
+ */
 export interface EntityRemoveMsg {
-  type: EntityType
+  type?: EntityType
   ids?: number[]
   projectId?: number
 }

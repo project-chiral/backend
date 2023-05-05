@@ -4,6 +4,7 @@ import {
   Delete,
   Get,
   Param,
+  Patch,
   Post,
   Put,
   Query,
@@ -12,6 +13,7 @@ import { ApiTags } from '@nestjs/swagger'
 import { SceneService } from './scene.service'
 import { CreateSceneDto } from './dto/create-scene.dto'
 import { UpdateSceneDto } from './dto/update-scene.dto'
+import { ToggleDoneDto } from '../dto/toggle-done.dto'
 
 @ApiTags('scene')
 @Controller('scene')
@@ -28,14 +30,19 @@ export class SceneController {
     return this.sceneService.get(id)
   }
 
-  @Put(':id')
+  @Patch(':id')
   update(@Param('id') id: number, @Body() dto: UpdateSceneDto) {
     return this.sceneService.update(id, dto)
   }
 
+  @Put(':id/done')
+  toggleDone(@Param('id') id: number, @Body() dto: ToggleDoneDto) {
+    return this.sceneService.toggleDone(id, dto)
+  }
+
   @Delete(':id')
   remove(@Param('id') id: number) {
-    return this.sceneService.removeScene(id)
+    return this.sceneService.remove(id)
   }
 
   @Get('search/name')

@@ -17,9 +17,6 @@ export class RelationsEntity implements Record<RelationType, Relations> {
   AFFECTED: Relations = new Relations()
 
   @Type(() => Relations)
-  INCLUDES: Relations = new Relations()
-
-  @Type(() => Relations)
   OCCURRED_IN: Relations = new Relations()
 
   @Type(() => Relations)

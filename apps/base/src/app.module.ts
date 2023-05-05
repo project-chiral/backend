@@ -1,7 +1,6 @@
-import { Module } from '@nestjs/common'
+import { CacheModule, Module } from '@nestjs/common'
 import { EnvModule } from 'libs/env'
 import { PrismaModule } from 'nestjs-prisma'
-import { AmqpConnection } from '@nestjs-plus/rabbitmq'
 import { HttpModule } from '@nestjs/axios'
 import { RmqModule } from 'libs/rmq/rmq.module'
 import { AppController } from './app.controller'
@@ -13,20 +12,18 @@ import { TaskService } from './task/task.service'
 import { SceneModule } from './scene/scene.module'
 import { ProjectModule } from './project/project.module'
 import { WorldviewModule } from './worldview/worldview.module'
-import { OpenaiService } from './api/openai.service'
 import { RequestContextModule } from 'nestjs-request-context'
 import { GraphModule } from './graph/graph.module'
 
 @Module({
   imports: [
     EnvModule,
+    RmqModule,
+    GraphModule,
+    CacheModule,
     PrismaModule.forRoot({
       isGlobal: true,
-      prismaServiceOptions: {
-        middlewares: [],
-      },
     }),
-    RmqModule,
     RequestContextModule,
     HttpModule,
     EventModule,
@@ -35,9 +32,8 @@ import { GraphModule } from './graph/graph.module'
     FileModule,
     WorldviewModule,
     ProjectModule,
-    GraphModule,
   ],
   controllers: [AppController],
-  providers: [AppService, TaskService, OpenaiService, AmqpConnection],
+  providers: [AppService, TaskService],
 })
 export class AppModule {}

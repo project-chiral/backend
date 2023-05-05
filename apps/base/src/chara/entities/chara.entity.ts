@@ -13,5 +13,7 @@ export class CharaEntity implements Character {
   start: Date | null
   end: Date | null
 
+  done: boolean
+
   projectId: number
 }

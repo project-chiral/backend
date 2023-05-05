@@ -5,63 +5,109 @@ import { getProjectId } from '../utils/get-header'
 import type { CreateWorldviewDto } from './dto/create-worldview.dto'
 import type { UpdateWorldviewDto } from './dto/update-worldview.dto'
 import { WorldviewEntity } from './entities/worldview.entity'
+import { ToggleDoneDto } from '../dto/toggle-done.dto'
+import { RmqService } from '@app/rmq/rmq.service'
 
 @Injectable()
 export class WorldviewService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly rmqService: RmqService
+  ) {}
 
   async create(dto: CreateWorldviewDto) {
     const projectId = getProjectId()
-    const worldview = await this.prismaService.worldview.create({
+    const result = await this.prismaService.worldview.create({
       data: {
         ...dto,
         project: { connect: { id: projectId } },
-        content: { create: {} },
       },
     })
 
-    return plainToInstance(WorldviewEntity, worldview)
+    this.rmqService.publish('amq.direct', 'entity_create', {
+      type: 'worldview',
+      projectId,
+      ids: [result.id],
+    })
+
+    return plainToInstance(WorldviewEntity, result)
   }
 
   async get(id: number) {
-    const worldview = await this.prismaService.worldview.findUniqueOrThrow({
+    const result = await this.prismaService.worldview.findUniqueOrThrow({
       where: { id },
     })
 
-    return plainToInstance(WorldviewEntity, worldview)
+    return plainToInstance(WorldviewEntity, result)
   }
 
   async getAll() {
     const projectId = getProjectId()
 
-    const worldviews = await this.prismaService.worldview.findMany({
+    const results = await this.prismaService.worldview.findMany({
       where: { projectId },
     })
 
-    return worldviews.map((v) => plainToInstance(WorldviewEntity, v))
+    return results.map((v) => plainToInstance(WorldviewEntity, v))
   }
 
   async update(id: number, dto: UpdateWorldviewDto) {
-    const worldview = await this.prismaService.worldview.update({
+    const projectId = getProjectId()
+
+    const result = await this.prismaService.worldview.update({
       where: { id },
       data: dto,
     })
 
-    return plainToInstance(WorldviewEntity, worldview)
+    this.rmqService.publish('amq.direct', 'entity_update', {
+      type: 'worldview',
+      projectId,
+      ids: [id],
+    })
+
+    return plainToInstance(WorldviewEntity, result)
+  }
+
+  async toggleDone(id: number, { done }: ToggleDoneDto) {
+    const result = await this.prismaService.worldview.update({
+      where: { id },
+      data: { done },
+    })
+
+    this.rmqService.publish('amq.direct', 'entity_done', {
+      type: 'worldview',
+      ids: [id],
+      done,
+    })
+
+    return plainToInstance(WorldviewEntity, result)
   }
 
   async remove(id: number) {
-    const worldview = await this.prismaService.worldview.delete({
+    const result = await this.prismaService.worldview.delete({
       where: { id },
     })
 
-    // 删除子节点
-    await this.prismaService.worldview.deleteMany({
-      where: {
-        path: { startsWith: worldview.path },
-      },
+    const subs = await this.prismaService.worldview.findMany({
+      where: { path: { startsWith: result.path } },
     })
 
-    return plainToInstance(WorldviewEntity, worldview)
+    const subIds = subs.map((v) => v.id)
+
+    // 删除子节点
+    if (subIds.length > 0) {
+      await this.prismaService.worldview.deleteMany({
+        where: {
+          id: { in: subIds },
+        },
+      })
+    }
+
+    this.rmqService.publish('amq.direct', 'entity_remove', {
+      type: 'worldview',
+      ids: [id, ...subIds],
+    })
+
+    return plainToInstance(WorldviewEntity, result)
   }
 }

@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUrl,
   Max,
   Min,
 } from 'class-validator'
@@ -14,6 +15,9 @@ export class CreateEventDto {
   @IsString()
   @IsNotEmpty()
   name: string
+
+  @IsString()
+  path: string
 
   @IsString()
   @IsOptional()
@@ -35,4 +39,7 @@ export class CreateEventDto {
   @IsDate()
   @Type(() => Date)
   end: Date
+
+  @IsUrl()
+  cover: string
 }

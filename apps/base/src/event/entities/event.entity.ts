@@ -4,6 +4,7 @@ import type { Event } from '@prisma/client'
 
 export class EventEntity implements Event {
   id: number
+  path: string
   name: string
   description: string | null
   color: string
@@ -23,7 +24,7 @@ export class EventEntity implements Event {
 
   done: boolean
 
-  unresolved: object
+  cover: string
 
   contentId: number | null
   projectId: number

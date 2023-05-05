@@ -2,17 +2,15 @@ import { Injectable } from '@nestjs/common'
 import { plainToInstance } from 'class-transformer'
 import { PrismaService } from 'nestjs-prisma'
 import { getProjectId } from '../utils/get-header'
-import type { UpdateContentDto } from './dto/content/update-content.dto'
 import type { CreateEventDto } from './dto/event/create-event.dto'
 import type { UpdateEventDto } from './dto/event/update-event.dto'
-import { EventContentEntity } from './entities/event-content.entity'
 import { EventEntity } from './entities/event.entity'
 import { EventTodoEntity } from './entities/event-todo.entity'
 import type { CreateTodoDto } from './dto/todo/create-todo.dto'
 import type { UpdateTodoDto } from './dto/todo/update-todo.dto'
 import type { GetAllEventQueryDto } from './dto/event/get-all-event-query-dto'
 import { RmqService } from '@app/rmq/rmq.service'
-import { ToggleEventDoneDto } from './dto/event/toggle-event-done.dto'
+import { ToggleDoneDto } from '../dto/toggle-done.dto'
 
 @Injectable()
 export class EventService {
@@ -48,26 +46,6 @@ export class EventService {
     })
 
     return results.map((v) => plainToInstance(EventEntity, v))
-  }
-
-  /**
-   * 随机获取一个事件
-   */
-  async getRandom() {
-    const projectId = getProjectId()
-    const count = await this.prismaService.event.count({
-      where: { projectId },
-    })
-
-    const skip = Math.floor(Math.random() * count)
-
-    const event = await this.prismaService.event.findFirst({
-      where: { projectId },
-      orderBy: { id: 'desc' },
-      skip,
-    })
-
-    return plainToInstance(EventEntity, event)
   }
 
   /**
@@ -130,7 +108,6 @@ export class EventService {
         ...dto,
         projectId,
         serial,
-        content: { create: {} },
       },
     })
 
@@ -144,27 +121,22 @@ export class EventService {
   }
 
   async update(id: number, dto: UpdateEventDto) {
-    const result = await this.prismaService.$transaction(async (prisma) => {
-      // 如果事件标记为done则不允许修改
-      const event = await prisma.event.findUniqueOrThrow({
-        where: { id },
-      })
-      if (event.done) {
-        return event
-      }
-      return await prisma.event.update({
-        where: { id },
-        data: {
-          ...dto,
-          unresolved: dto.unresolved as object,
-        },
-      })
+    const projectId = getProjectId()
+    const result = await this.prismaService.event.update({
+      where: { id },
+      data: { ...dto },
+    })
+
+    this.rmqService.publish('amq.direct', 'entity_update', {
+      type: 'event',
+      projectId,
+      ids: [id],
     })
 
     return plainToInstance(EventEntity, result)
   }
 
-  async toggleDone(id: number, { done }: ToggleEventDoneDto) {
+  async toggleDone(id: number, { done }: ToggleDoneDto) {
     const result = await this.prismaService.event.update({
       where: { id },
       data: { done },
@@ -180,60 +152,28 @@ export class EventService {
   }
 
   async remove(id: number) {
-    // TODO 软删除
     const result = await this.prismaService.event.delete({
       where: { id },
     })
 
+    const subs = await this.prismaService.event.findMany({
+      where: { path: { startsWith: result.path } },
+      select: { id: true },
+    })
+    const subIds = subs.map((v) => v.id)
+
+    if (subIds.length > 0) {
+      await this.prismaService.event.deleteMany({
+        where: { id: { in: subIds } },
+      })
+    }
+
     this.rmqService.publish('amq.direct', 'entity_remove', {
       type: 'event',
-      ids: [result.id],
+      ids: [result.id, ...subIds],
     })
 
     return plainToInstance(EventEntity, result)
-  }
-
-  // ---------------------------------- content ---------------------------------
-
-  async getContent(eventId: number) {
-    const { content } = await this.prismaService.event.findUniqueOrThrow({
-      where: { id: eventId },
-      select: { content: true },
-    })
-
-    return plainToInstance(EventContentEntity, content)
-  }
-
-  async updateContent(eventId: number, dto: UpdateContentDto) {
-    const { content } = await this.prismaService.event.update({
-      where: { id: eventId },
-      data: {
-        content: {
-          update: dto,
-        },
-      },
-      select: { content: true },
-    })
-
-    return plainToInstance(EventContentEntity, content)
-  }
-
-  async searchContent(text: string) {
-    if (text === '') {
-      return []
-    }
-    // TODO 全文搜索按词索引，但有可能需要按片段索引
-    const events = await this.prismaService.event.findMany({
-      where: {
-        content: {
-          content: {
-            contains: text.replace(/\s+/, ' & '),
-          },
-        },
-      },
-    })
-
-    return events.map((v) => plainToInstance(EventEntity, v))
   }
 
   // ---------------------------------- todo ---------------------------------

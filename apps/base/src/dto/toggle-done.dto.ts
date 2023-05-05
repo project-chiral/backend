@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer'
 import { IsBoolean } from 'class-validator'
 
-export class ToggleEventDoneDto {
+export class ToggleDoneDto {
   @IsBoolean()
   @Type(() => Boolean)
   done: boolean

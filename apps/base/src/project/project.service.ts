@@ -9,12 +9,25 @@ import type { UpdateWorkspaceDto } from './dto/update-workspace.dto'
 import { ProjectEntity } from './entities/project.entity'
 import { SettingsEntity } from './entities/settings.entity'
 import { WorkspaceEntity } from './entities/workspace.entity'
+import { RmqService } from '@app/rmq/rmq.service'
 
 @Injectable()
 export class ProjectService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly rmqService: RmqService
+  ) {}
 
   /* --------------------------------- project -------------------------------- */
+
+  async get() {
+    const id = getProjectId()
+    const project = await this.prismaService.project.findUniqueOrThrow({
+      where: { id },
+    })
+
+    return plainToInstance(ProjectEntity, project)
+  }
 
   async create(dto: CreateProjectDto) {
     const userId = getUserId()
@@ -40,19 +53,14 @@ export class ProjectService {
     return plainToInstance(ProjectEntity, project)
   }
 
-  async get() {
-    const id = getProjectId()
-    const project = await this.prismaService.project.findUniqueOrThrow({
-      where: { id },
+  async remove() {
+    const projectId = getProjectId()
+    const project = await this.prismaService.project.delete({
+      where: { id: projectId },
     })
 
-    return plainToInstance(ProjectEntity, project)
-  }
-
-  async remove() {
-    const id = getProjectId()
-    const project = await this.prismaService.project.delete({
-      where: { id },
+    this.rmqService.publish('amq.direct', 'entity_remove', {
+      projectId,
     })
 
     return plainToInstance(ProjectEntity, project)

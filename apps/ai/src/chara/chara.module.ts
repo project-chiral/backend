@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common'
 import { CharaService } from './chara.service'
-import { PrismaModule } from 'nestjs-prisma'
-import { CharaController } from './chara.controller';
+import { CharaController } from './chara.controller'
 
 @Module({
-  imports: [PrismaModule],
+  imports: [],
   providers: [CharaService],
   exports: [CharaService],
   controllers: [CharaController],
