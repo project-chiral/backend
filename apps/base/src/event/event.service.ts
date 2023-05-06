@@ -111,7 +111,7 @@ export class EventService {
       },
     })
 
-    this.rmqService.publish('amq.direct', 'entity_create', {
+    this.rmqService.publish('entity_create', {
       type: 'event',
       projectId,
       ids: [result.id],
@@ -127,7 +127,7 @@ export class EventService {
       data: { ...dto },
     })
 
-    this.rmqService.publish('amq.direct', 'entity_update', {
+    this.rmqService.publish('entity_update', {
       type: 'event',
       projectId,
       ids: [id],
@@ -142,7 +142,7 @@ export class EventService {
       data: { done },
     })
 
-    this.rmqService.publish('amq.direct', 'entity_done', {
+    this.rmqService.publish('entity_done', {
       type: 'event',
       ids: [id],
       done,
@@ -168,7 +168,7 @@ export class EventService {
       })
     }
 
-    this.rmqService.publish('amq.direct', 'entity_remove', {
+    this.rmqService.publish('entity_remove', {
       type: 'event',
       ids: [result.id, ...subIds],
     })

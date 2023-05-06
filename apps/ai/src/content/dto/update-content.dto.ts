@@ -1,6 +1,7 @@
 import { IsEnum, IsInt, IsString } from 'class-validator'
 import { EntityEnum, EntityType } from '@app/rmq/types'
 import { ApiProperty } from '@nestjs/swagger'
+import { Type } from 'class-transformer'
 
 export class UpdateContentDto {
   @IsEnum(EntityEnum)
@@ -8,6 +9,7 @@ export class UpdateContentDto {
   type: EntityType
 
   @IsInt()
+  @Type(() => Number)
   id: number
 
   @IsString()

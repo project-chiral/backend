@@ -33,7 +33,7 @@ export class CypherService extends Connection implements OnApplicationShutdown {
         query +=
           typeof value === 'object'
             ? // 转换为不含双引号的JSON
-              util.inspect(removeUndefined(value))
+              util.inspect(value)
             : `${value}`
       }
     }

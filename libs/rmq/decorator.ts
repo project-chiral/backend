@@ -1,18 +1,16 @@
 import { RabbitRPC, RabbitSubscribe } from '@nestjs-plus/rabbitmq'
 import { RmqSubscribeKeys } from './subscribe'
-import { ExchangeType } from './types'
 
-export const Subscribe = (
-  exchange: ExchangeType,
-  routingKey: RmqSubscribeKeys
-) =>
+export const Subscribe = (queue: RmqSubscribeKeys) =>
   RabbitSubscribe({
-    exchange,
-    routingKey,
+    exchange: 'amq.direct',
+    routingKey: queue,
+    queue,
   })
 
-export const Rpc = (exchange: ExchangeType, routingKey: RmqSubscribeKeys) =>
+export const Rpc = (queue: RmqSubscribeKeys) =>
   RabbitRPC({
-    exchange,
-    routingKey,
+    exchange: 'amq.direct',
+    routingKey: queue,
+    queue,
   })

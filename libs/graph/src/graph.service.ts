@@ -163,22 +163,22 @@ export class GraphService {
     return plainToInstance(NodeEntity, query?.n)
   }
 
-  @Subscribe('amq.direct', 'entity_create')
+  @Subscribe('entity_create')
   protected async handleEntityCreate({
     type,
     ids,
     projectId,
   }: EntityCreateMsg) {
     const props = ids.map((id) => ({ id, projectId }))
+
     await this.cypherService.execute`
     unwind ${props} as props
-    merge (n:${type})
-    set n = props
+    merge (n:${type} {id:props.id, projectId:props.projectId})
     return n
     `.run()
   }
 
-  @Subscribe('amq.direct', 'entity_remove')
+  @Subscribe('entity_remove')
   protected async handleEntityRemove({ type, ids }: EntityRemoveMsg) {
     await this.cypherService.execute`
     match (n:${type})

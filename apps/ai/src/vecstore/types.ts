@@ -28,7 +28,7 @@ export interface IndexParam {
 }
 
 export interface InsertRow {
-  [x: string]: string | number[]
+  [x: string]: string | number | number[]
 }
 
 export const MILVUS_PRIMARY_FIELD_NAME = 'langchain_primaryid'

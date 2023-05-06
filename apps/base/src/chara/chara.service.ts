@@ -42,7 +42,7 @@ export class CharaService {
       },
     })
 
-    this.rmqService.publish('amq.direct', 'entity_create', {
+    this.rmqService.publish('entity_create', {
       type: 'chara',
       projectId,
       ids: [chara.id],
@@ -58,7 +58,7 @@ export class CharaService {
       data: dto,
     })
 
-    this.rmqService.publish('amq.direct', 'entity_update', {
+    this.rmqService.publish('entity_update', {
       type: 'chara',
       projectId,
       ids: [id],
@@ -73,7 +73,7 @@ export class CharaService {
       data: { done },
     })
 
-    this.rmqService.publish('amq.direct', 'entity_done', {
+    this.rmqService.publish('entity_done', {
       type: 'chara',
       ids: [id],
       done,
@@ -87,7 +87,7 @@ export class CharaService {
       where: { id },
     })
 
-    this.rmqService.publish('amq.direct', 'entity_remove', {
+    this.rmqService.publish('entity_remove', {
       type: 'chara',
       ids: [id],
     })

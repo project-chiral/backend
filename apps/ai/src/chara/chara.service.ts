@@ -164,7 +164,7 @@ export class CharaService {
   /**
    * 角色信息更新后将redis中的角色表删除
    */
-  @Subscribe('amq.direct', 'entity_update')
+  @Subscribe('entity_update')
   protected async handleCharaUpdate({ type, projectId }: EntityUpdateMsg) {
     if (type !== 'chara') {
       return

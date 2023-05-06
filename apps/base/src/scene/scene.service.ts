@@ -32,7 +32,7 @@ export class SceneService {
       },
     })
 
-    this.rmqService.publish('amq.direct', 'entity_create', {
+    this.rmqService.publish('entity_create', {
       type: 'scene',
       projectId,
       ids: [result.id],
@@ -48,7 +48,7 @@ export class SceneService {
       data: dto,
     })
 
-    this.rmqService.publish('amq.direct', 'entity_update', {
+    this.rmqService.publish('entity_update', {
       type: 'scene',
       projectId,
       ids: [id],
@@ -63,7 +63,7 @@ export class SceneService {
       data: { done },
     })
 
-    this.rmqService.publish('amq.direct', 'entity_done', {
+    this.rmqService.publish('entity_done', {
       type: 'scene',
       ids: [id],
       done,
@@ -77,7 +77,7 @@ export class SceneService {
       where: { id },
     })
 
-    this.rmqService.publish('amq.direct', 'entity_remove', {
+    this.rmqService.publish('entity_remove', {
       type: 'scene',
       ids: [id],
     })

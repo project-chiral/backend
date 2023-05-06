@@ -10,12 +10,12 @@ export class ContentController {
   constructor(private readonly contentService: ContentService) {}
 
   @Get()
-  getContent(@Query() query: GetContentQueryDto) {
+  get(@Query() query: GetContentQueryDto) {
     return this.contentService.getContent(query)
   }
 
   @Put()
-  updateContent(@Body() dto: UpdateContentDto) {
+  update(@Body() dto: UpdateContentDto) {
     return this.contentService.updateContent(dto)
   }
 }

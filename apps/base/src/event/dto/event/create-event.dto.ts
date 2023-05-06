@@ -17,7 +17,8 @@ export class CreateEventDto {
   name: string
 
   @IsString()
-  path: string
+  @IsOptional()
+  path?: string
 
   @IsString()
   @IsOptional()
@@ -41,5 +42,6 @@ export class CreateEventDto {
   end: Date
 
   @IsUrl()
-  cover: string
+  @IsOptional()
+  cover?: string
 }

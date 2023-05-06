@@ -24,7 +24,7 @@ export class WorldviewService {
       },
     })
 
-    this.rmqService.publish('amq.direct', 'entity_create', {
+    this.rmqService.publish('entity_create', {
       type: 'worldview',
       projectId,
       ids: [result.id],
@@ -59,7 +59,7 @@ export class WorldviewService {
       data: dto,
     })
 
-    this.rmqService.publish('amq.direct', 'entity_update', {
+    this.rmqService.publish('entity_update', {
       type: 'worldview',
       projectId,
       ids: [id],
@@ -74,7 +74,7 @@ export class WorldviewService {
       data: { done },
     })
 
-    this.rmqService.publish('amq.direct', 'entity_done', {
+    this.rmqService.publish('entity_done', {
       type: 'worldview',
       ids: [id],
       done,
@@ -103,7 +103,7 @@ export class WorldviewService {
       })
     }
 
-    this.rmqService.publish('amq.direct', 'entity_remove', {
+    this.rmqService.publish('entity_remove', {
       type: 'worldview',
       ids: [id, ...subIds],
     })

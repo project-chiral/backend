@@ -81,13 +81,13 @@ export class ContentService {
     )
   }
 
-  @Subscribe('amq.direct', 'entity_done')
+  @Subscribe('entity_done')
   protected async handleEntitiesDone({ type, ids, done }: EntityDoneMsg) {
     const contents = await this.getContents({ type, ids })
     await this.vecstoreService.updateMany(contents.map((c) => c.toDoc(done)))
   }
 
-  @Subscribe('amq.direct', 'entity_remove')
+  @Subscribe('entity_remove')
   protected async handleEntityRemove(msg: EntityRemoveMsg) {
     const projectId = this.utils.getProjectId()
     await this.vecstoreService.deleteMany(msg)
