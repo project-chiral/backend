@@ -12,7 +12,7 @@
     "baseUrl": "./",
     "incremental": true,
     "skipLibCheck": true,
-    "strictNullChecks": false,
+    "strictNullChecks": true,
     "noImplicitAny": false,
     "strictBindCallApply": false,
     "forceConsistentCasingInFileNames": false,
@@ -45,13 +45,8 @@
         "libs/graph/src/*"
       ],
       "@app/cache": [
-        "libs/cache/src",
-        "libs/cache/src"
+        "libs/cache/src" 
       ],
-      "@app/cache/*": [
-        "libs/cache/src/*",
-        "libs/cache/src/*"
-      ]
     }
   }
 }
