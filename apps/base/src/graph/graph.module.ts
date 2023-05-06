@@ -1,10 +1,9 @@
 import { Module } from '@nestjs/common'
 import { GraphController } from './graph.controller'
-import { GraphService } from '@app/graph'
-import { CypherService } from '@app/graph/cypher/cypher.service'
-
+import { GraphModule as GraphLibModule } from '@app/graph'
 @Module({
+  imports: [GraphLibModule],
   controllers: [GraphController],
-  providers: [GraphService, CypherService],
+  providers: [],
 })
 export class GraphModule {}

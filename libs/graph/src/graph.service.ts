@@ -4,7 +4,7 @@ import { NodeIdDto } from './dto/node-id.dto'
 import { RelationIdDto } from './dto/relation-id.dto'
 import { NodeEntity } from './entities/node.entity'
 import { RelationEntity } from './entities/relation.entity'
-import { RelationsEntity } from './entities/relations.entity'
+import { NodeRelationsEntity } from './entities/node-relations.entity'
 import { CypherService } from './cypher/cypher.service'
 import { RelationType, RelationSchema } from './schema'
 import { Subscribe, EntityCreateMsg, EntityRemoveMsg } from '@app/rmq/index'
@@ -13,7 +13,7 @@ import { Subscribe, EntityCreateMsg, EntityRemoveMsg } from '@app/rmq/index'
 export class GraphService {
   constructor(private readonly cypherService: CypherService) {}
 
-  async getRelations({ type, id }: NodeIdDto) {
+  async getNodeRelations({ type, id }: NodeIdDto) {
     const query = (await this.cypherService.execute`
     match (a:${type} ${{ id }})-[r]-(b)
     return
@@ -22,7 +22,7 @@ export class GraphService {
       b.id as id
     `.run()) as { type: RelationType; out: boolean; id: number }[]
 
-    const relations = new RelationsEntity()
+    const relations = new NodeRelationsEntity()
     for (const { type, out, id } of query) {
       const rel = relations[type]
       if (out) {
@@ -35,15 +35,65 @@ export class GraphService {
     return relations
   }
 
-  async createRelation({ from, to, type }: RelationIdDto) {
+  async getRelation(dto: RelationIdDto) {
+    const { from: fromType, to: toType } = RelationSchema[dto.type]
+    const query = await this.cypherService.execute`
+    match (from:${fromType} ${{ id: dto.from }})
+    -[r:${dto.type}]->
+    (to:${toType} ${{ id: dto.to }})
+    return r
+    `.run()
+
+    return plainToInstance(
+      RelationEntity,
+      query.map((q) => q?.r)
+    )
+  }
+
+  async createRelation(projectId: number, { from, to, type }: RelationIdDto) {
     const { from: fromType, to: toType } = RelationSchema[type]
     const query = await this.cypherService.execute`
-    match (from:${fromType} ${{ id: from }}), (to:${toType} ${{ id: to }})
+    match 
+      (from:${fromType} ${{ id: from, projectId }}),
+      (to:${toType} ${{ id: to, projectId }})
     merge (from)-[r:${type}]->(to)
     return r
     `.run()
 
-    return query.map((q) => plainToInstance(RelationEntity, q?.r))
+    return plainToInstance(
+      RelationEntity,
+      query.map((q) => q?.r)
+    )
+  }
+
+  async createRelations(projectId: number, dtos: RelationIdDto[]) {
+    const typeMap = {} as Record<string, { from?: number; to?: number }[]>
+    for (const { from, to, type } of dtos) {
+      if (!typeMap[type]) {
+        typeMap[type] = []
+      }
+      typeMap[type].push({ from, to })
+    }
+
+    const query = (
+      await Promise.all(
+        Object.entries(typeMap).map(([type, dtos]) => {
+          const { from: fromType, to: toType } = RelationSchema[type]
+          return this.cypherService.execute`
+        unwind ${dtos} as data
+        match 
+          (from:${fromType} {id:data.from, projectId:${projectId}}), 
+          (to:${toType} {id:data.to, projectId:${projectId}})
+        merge (from)-[r:${type}]->(to)
+        return r`.run()
+        })
+      )
+    ).flat()
+
+    return plainToInstance(
+      RelationEntity,
+      query.map((q) => q?.r)
+    )
   }
 
   async removeRelation({ from, to, type }: RelationIdDto) {
@@ -57,7 +107,41 @@ export class GraphService {
     return r
     `.run()
 
-    return query.map((q) => plainToInstance(RelationEntity, q?.r))
+    return plainToInstance(
+      RelationEntity,
+      query.map((q) => q?.r)
+    )
+  }
+
+  async removeRelations(dtos: RelationIdDto[]) {
+    const typeMap = {} as Record<string, { from?: number; to?: number }[]>
+    for (const { from, to, type } of dtos) {
+      if (!typeMap[type]) {
+        typeMap[type] = []
+      }
+      typeMap[type].push({ from, to })
+    }
+
+    const query = (
+      await Promise.all(
+        Object.entries(typeMap).map(([type, dtos]) => {
+          const { from: fromType, to: toType } = RelationSchema[type]
+          return this.cypherService.execute`
+        unwind ${dtos} as data
+        match 
+          (from:${fromType} {id:data.from})
+          -[r:${type}]->
+          (to:${toType} {id:data.to})
+        delete r
+        return r`.run()
+        })
+      )
+    ).flat()
+
+    return plainToInstance(
+      RelationEntity,
+      query.map((q) => q?.r)
+    )
   }
 
   async createNode(projectId: number, { type, id }: NodeIdDto) {
@@ -95,14 +179,10 @@ export class GraphService {
   }
 
   @Subscribe('amq.direct', 'entity_remove')
-  protected async handleEntityRemove({
-    type,
-    ids,
-    projectId,
-  }: EntityRemoveMsg) {
+  protected async handleEntityRemove({ type, ids }: EntityRemoveMsg) {
     await this.cypherService.execute`
     match (n:${type})
-    where n.id in ${ids} or n.projectId = ${projectId}
+    where n.id in ${ids}
     detach delete n
     `.run()
   }

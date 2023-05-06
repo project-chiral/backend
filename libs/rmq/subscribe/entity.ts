@@ -18,9 +18,8 @@ export interface EntityUpdateMsg {
  * projectId和ids为or关系
  */
 export interface EntityDoneMsg {
-  type?: EntityType
-  ids?: number[]
-  projectId?: number
+  type: EntityType
+  ids: number[]
   done: boolean
 }
 
@@ -30,7 +29,6 @@ export interface EntityDoneMsg {
  * projectId和ids为or关系
  */
 export interface EntityRemoveMsg {
-  type?: EntityType
-  ids?: number[]
-  projectId?: number
+  type: EntityType
+  ids: number[]
 }

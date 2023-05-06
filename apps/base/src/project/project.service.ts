@@ -59,10 +59,6 @@ export class ProjectService {
       where: { id: projectId },
     })
 
-    this.rmqService.publish('amq.direct', 'entity_remove', {
-      projectId,
-    })
-
     return plainToInstance(ProjectEntity, project)
   }
 

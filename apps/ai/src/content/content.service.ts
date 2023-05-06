@@ -89,15 +89,16 @@ export class ContentService {
 
   @Subscribe('amq.direct', 'entity_remove')
   protected async handleEntityRemove(msg: EntityRemoveMsg) {
+    const projectId = this.utils.getProjectId()
     await this.vecstoreService.deleteMany(msg)
     await this.cache.del(
-      ...msg.ids.map((id) =>
+      msg.ids?.map((id) =>
         ContentKey({
           type: msg.type,
           id,
-          projectId: this.utils.getProjectId(),
+          projectId,
         })
-      )
+      ) ?? []
     )
   }
 }

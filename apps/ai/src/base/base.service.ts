@@ -17,7 +17,7 @@ export class BaseService {
 
   async lang() {
     const projectId = this.utils.getProjectId()
-    const lang = await this.cache.get(LangKey({ projectId }))
+    const lang = await this.cache.get<string>(LangKey({ projectId }))
 
     if (!lang) {
       const { lang } = await this.prismaService.settings.findUniqueOrThrow({

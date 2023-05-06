@@ -1,3 +1,5 @@
-export type CharaTable = {
-  [name: string]: string[]
-}
+export type CharaList = {
+  id: number
+  name: string
+  alias: string[]
+}[]

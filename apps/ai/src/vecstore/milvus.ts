@@ -243,7 +243,7 @@ export class Milvus extends VectorStore {
     }
 
     const queryParams = params.filter && {
-      partition_names: [params.filter.type],
+      partition_names: params.filter.type && [params.filter.type],
       expr: this._filterExpr(params.filter),
     }
 

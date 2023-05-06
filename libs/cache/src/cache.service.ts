@@ -4,11 +4,14 @@ import { Redis } from 'ioredis'
 @Injectable()
 export class CacheService extends Redis {
   constructor() {
-    super(process.env.REDIS_URL)
+    super(process.env.REDIS_URL ?? '')
   }
 
-  async get<T = string>(key: string) {
+  async get<T>(key: string) {
     const data = await super.get(key)
+    if (!data) {
+      return null
+    }
     return JSON.parse(data) as T
   }
 

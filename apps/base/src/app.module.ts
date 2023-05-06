@@ -1,4 +1,4 @@
-import { CacheModule, Module } from '@nestjs/common'
+import { Module } from '@nestjs/common'
 import { EnvModule } from 'libs/env'
 import { PrismaModule } from 'nestjs-prisma'
 import { HttpModule } from '@nestjs/axios'
@@ -14,6 +14,8 @@ import { ProjectModule } from './project/project.module'
 import { WorldviewModule } from './worldview/worldview.module'
 import { RequestContextModule } from 'nestjs-request-context'
 import { GraphModule } from './graph/graph.module'
+import { CacheModule } from '@app/cache'
+import { UtilsModule } from '@app/utils'
 
 @Module({
   imports: [
@@ -21,6 +23,7 @@ import { GraphModule } from './graph/graph.module'
     RmqModule,
     GraphModule,
     CacheModule,
+    UtilsModule,
     PrismaModule.forRoot({
       isGlobal: true,
     }),

@@ -1,4 +1,4 @@
-export const CharaTableKey = ({ projectId }: { projectId: number }) =>
+export const CharaListKey = ({ projectId }: { projectId: number }) =>
   `${projectId}/chara/table`
 
 export const UnresolvedCharasKey = ({
