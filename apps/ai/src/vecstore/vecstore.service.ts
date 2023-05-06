@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common'
 import { Milvus } from './milvus'
 import { OpenAIEmbeddings } from 'langchain/embeddings/openai'
 import { Doc, FilterType, IdType } from './types'
+import { Subscribe } from '@app/rmq/decorator'
+import { EntityCreateMsg, EntityRemoveMsg } from '@app/rmq/subscribe'
 
 @Injectable()
 export class VecstoreService {
@@ -10,7 +12,7 @@ export class VecstoreService {
 
   constructor() {
     this.embeddings = new OpenAIEmbeddings({
-      modelName: 'ada',
+      modelName: 'text-embedding-ada-002',
     })
     this.vecstore = new Milvus(this.embeddings, {
       collectionName: 'entity_content',
@@ -31,18 +33,16 @@ export class VecstoreService {
   }
 
   async query({ type, id }: IdType) {
-    const [result] = await this.vecstore.query(
-      {
-        type,
-        ids: [id],
-      },
-      1
-    )
+    const [result] = await this.vecstore.query({
+      type,
+      ids: [id],
+    })
+
     return result?.[0]
   }
 
-  async queryMany(filter: FilterType, k = 1) {
-    const result = await this.vecstore.query(filter, k)
+  async queryMany(filter: FilterType) {
+    const result = await this.vecstore.query(filter)
     return result.map((v) => v[0])
   }
 
@@ -77,5 +77,28 @@ export class VecstoreService {
 
   async deleteMany(filter: FilterType) {
     return this.vecstore.delete(filter)
+  }
+
+  @Subscribe('entity_create')
+  protected async handleEntityCreate({ type, ids }: EntityCreateMsg) {
+    this.createMany(
+      ids.map(
+        (id) =>
+          new Doc({
+            metadata: {
+              id,
+              type,
+              done: false,
+              updateAt: new Date(),
+            },
+            pageContent: ' ',
+          })
+      )
+    )
+  }
+
+  @Subscribe('entity_remove')
+  protected async handleEntityRemove(msg: EntityRemoveMsg) {
+    await this.deleteMany(msg)
   }
 }

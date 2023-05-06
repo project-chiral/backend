@@ -51,8 +51,8 @@ export class Milvus extends VectorStore {
     this.embeddings = embeddings
     this.collectionName = args.collectionName ?? genCollectionName()
 
-    this.autoId = true
-    this.fields = []
+    this.autoId = false
+    this.fields = ['id', 'doc', 'vec', 'type', 'done', 'updateAt']
 
     const url =
       args.url ??
@@ -70,12 +70,12 @@ export class Milvus extends VectorStore {
     const expr: string[] = []
 
     for (const [key, value] of Object.entries(filter)) {
-      if (typeof value === 'string' || typeof value === 'number') {
+      if (typeof value === 'string') {
         expr.push(`${key} == "${value}"`)
-      } else if (typeof value === 'boolean') {
-        expr.push(`${!value && 'not'} ${key}`)
+      } else if (typeof value === 'boolean' || typeof value === 'number') {
+        expr.push(`${key} == ${value}`)
       } else if (Array.isArray(value)) {
-        expr.push(`${key} in [${value}]`)
+        expr.push(`id in [${value}]`)
       }
     }
 
@@ -98,9 +98,12 @@ export class Milvus extends VectorStore {
       done.map((doc) => doc.pageContent)
     )
 
+    // 未完成的文档暂不计算向量，用0填充
+    const undoneVecs = Array(undone.length).fill(Array(1536).fill(0))
+
     await Promise.all([
       this.addVectors(doneVecs, done),
-      this.addVectors(Array(undone.length).fill([]), undone),
+      this.addVectors(undoneVecs, undone),
     ])
   }
 
@@ -116,14 +119,17 @@ export class Milvus extends VectorStore {
     for (let i = 0; i < vectors.length; i++) {
       const { type, done } = documents[i].metadata
       const partition = `${type}_${done}`
-      if (partitionData[partition] === undefined) {
+      const doc = documents[i]
+      const vec = vectors[i]
+
+      if (!(partition in partitionData)) {
         partitionData[partition] = {
-          vectors: [vectors[i]],
-          documents: [documents[i]],
+          vectors: [vec],
+          documents: [doc],
         }
       } else {
-        partitionData[partition].vectors.push(vectors[i])
-        partitionData[partition].documents.push(documents[i])
+        partitionData[partition].vectors.push(vec)
+        partitionData[partition].documents.push(doc)
       }
     }
 
@@ -147,16 +153,13 @@ export class Milvus extends VectorStore {
     if (vectors.length === 0) {
       return
     }
-    await this.ensureCollection(vectors, documents)
 
     const insertDatas: InsertRow[] = []
     for (let index = 0; index < vectors.length; index++) {
       const vec = vectors[index]
       const doc = documents[index]
-      const data: InsertRow = {
-        doc: doc.pageContent,
-        vec: vec,
-      }
+
+      const data: InsertRow = {}
       this.fields.forEach((field) => {
         switch (field) {
           case 'id':
@@ -166,7 +169,7 @@ export class Milvus extends VectorStore {
                   `The Collection's primaryField is configured with autoId=false, thus its value must be provided through metadata.`
                 )
               }
-              data[field] = `${doc.metadata['id']}`
+              data[field] = doc.metadata['id']
             }
             break
           case 'doc':
@@ -202,13 +205,10 @@ export class Milvus extends VectorStore {
     }
   }
 
-  async hybridSearch(
-    params: {
-      query?: number[]
-      filter?: FilterType
-    },
-    k?: number
-  ) {
+  async similaritySearchVectorWithScore(
+    query: number[],
+    k = 10
+  ): Promise<[Doc, number][]> {
     const hasColResp = await this.client.hasCollection({
       collection_name: this.collectionName,
     })
@@ -231,7 +231,9 @@ export class Milvus extends VectorStore {
     // clone this.field and remove vectorField
     const outputFields = this.fields.filter((field) => field !== 'vec')
 
-    const searchParams = params.query && {
+    const searchResp = await this.client.search({
+      collection_name: this.collectionName,
+      output_fields: outputFields,
       search_params: {
         anns_field: 'vec',
         topk: k?.toString(),
@@ -239,20 +241,9 @@ export class Milvus extends VectorStore {
         params: this.indexSearchParams,
       },
       vector_type: DataType.FloatVector,
-      vectors: [params.query],
-    }
-
-    const queryParams = params.filter && {
-      partition_names: params.filter.type && [params.filter.type],
-      expr: this._filterExpr(params.filter),
-    }
-
-    const searchResp = await this.client.search({
-      collection_name: this.collectionName,
-      output_fields: outputFields,
-      ...queryParams,
-      ...searchParams,
+      vectors: [query],
     })
+
     if (searchResp.status.error_code !== ErrorCode.SUCCESS) {
       throw new Error(`Error searching data: ${JSON.stringify(searchResp)}`)
     }
@@ -278,21 +269,63 @@ export class Milvus extends VectorStore {
     return results
   }
 
-  async similaritySearchVectorWithScore(
-    query: number[],
-    k = 10
-  ): Promise<[Doc, number][]> {
-    return this.hybridSearch({ query }, k)
-  }
+  async query(filter: FilterType): Promise<[Doc, number][]> {
+    const hasColResp = await this.client.hasCollection({
+      collection_name: this.collectionName,
+    })
+    if (hasColResp.status.error_code !== ErrorCode.SUCCESS) {
+      throw new Error(`Error checking collection: ${hasColResp}`)
+    }
+    if (hasColResp.value === false) {
+      throw new Error(
+        `Collection not found: ${this.collectionName}, please create collection before search.`
+      )
+    }
 
-  async query(filter: FilterType, k?: number): Promise<[Doc, number][]> {
-    return this.hybridSearch({ filter }, k)
+    const loadResp = await this.client.loadCollectionSync({
+      collection_name: this.collectionName,
+    })
+    if (loadResp.error_code !== ErrorCode.SUCCESS) {
+      throw new Error(`Error loading collection: ${loadResp}`)
+    }
+
+    // clone this.field and remove vectorField
+    const outputFields = this.fields.filter((field) => field !== 'vec')
+
+    const searchResp = await this.client.query({
+      collection_name: this.collectionName,
+      output_fields: outputFields,
+      expr: this._filterExpr(filter),
+    })
+
+    if (searchResp.status.error_code !== ErrorCode.SUCCESS) {
+      throw new Error(`Error searching data: ${JSON.stringify(searchResp)}`)
+    }
+    const results: [Doc, number][] = []
+    searchResp.data.forEach((result) => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const fields = { pageContent: '', metadata: {} as DocMetadata }
+      Object.keys(result).forEach((key) => {
+        if (key === 'doc') {
+          fields.pageContent = result[key]
+        } else if (this.fields.includes(key)) {
+          if (typeof result[key] === 'string') {
+            const { isJson, obj } = checkJsonString(result[key])
+            fields.metadata[key] = isJson ? obj : result[key]
+          } else {
+            fields.metadata[key] = result[key]
+          }
+        }
+      })
+      results.push([new Doc(fields), result.score])
+    })
+
+    return results
   }
 
   async delete(filter: FilterType) {
     const deleteResp = await this.client.deleteEntities({
       collection_name: this.collectionName,
-      partition_name: filter.type,
       expr: this._filterExpr(filter),
     })
 
