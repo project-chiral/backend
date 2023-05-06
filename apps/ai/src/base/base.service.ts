@@ -36,14 +36,13 @@ export class BaseService {
   }
 
   async baseParams(type: EntityType, id: number) {
-    const doc = (
-      await this.contentService.getContent({
+    const [{ content: doc }, lang] = await Promise.all([
+      this.contentService.getContent({
         type,
         id,
-      })
-    ).content
-
-    const lang = await this.lang()
+      }),
+      this.lang(),
+    ])
 
     return {
       lang,
