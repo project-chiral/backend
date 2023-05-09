@@ -1,5 +1,5 @@
 import { EntityType } from '@app/rmq/types'
-import { Doc } from '../../vecstore/types'
+import { Doc } from '../../vecstore/schema'
 
 export class ContentEntity {
   updateAt: Date

@@ -32,10 +32,8 @@ export class ContentService {
     const content = await this.cache.get(key)
     if (!content) {
       const [doc] = await this.vecstoreService.query(
-        {
-          collection_name: type,
-        },
-        { ids: [id] }
+        { collection_name: type },
+        { id: [id] }
       )
       if (!doc) {
         throw new NotFoundException()

@@ -2,16 +2,9 @@ import { MilvusClient } from '@zilliz/milvus2-sdk-node'
 import { DataType } from '@zilliz/milvus2-sdk-node/dist/milvus/const/Milvus.js'
 import { ErrorCode } from '@zilliz/milvus2-sdk-node/dist/milvus/types.js'
 import { Embeddings } from 'langchain/embeddings/base'
-import {
-  Doc,
-  QueryParams,
-  IndexParam,
-  IndexType,
-  MilvusLibArgs,
-  PartitionEnum,
-  PositionType,
-} from './types'
+import { IndexParam, IndexType, MilvusLibArgs } from './types'
 import { EntityType } from '@app/rmq/types'
+import { QueryParams, PositionType, PartitionEnum, Doc } from './schema'
 
 const VECTOR_DIM = 1536
 
@@ -62,6 +55,13 @@ export class Milvus {
     const expr: string[] = []
 
     for (const [key, value] of Object.entries(filter)) {
+      if (typeof value === 'string') {
+        expr.push(`${key} == "${value}"`)
+      } else if (typeof value === 'boolean' || typeof value === 'number') {
+        expr.push(`${key} == ${value}`)
+      } else if (Array.isArray(value)) {
+        expr.push(`${key} in [${value}]`)
+      }
     }
 
     return expr.join(' and ')

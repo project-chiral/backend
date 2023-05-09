@@ -1,9 +1,9 @@
 import { Injectable } from '@nestjs/common'
 import { Milvus } from './milvus'
 import { OpenAIEmbeddings } from 'langchain/embeddings/openai'
-import { Doc, PartitionEnum, PositionType, QueryParams } from './types'
 import { Subscribe } from '@app/rmq/decorator'
 import { EntityCreateMsg, EntityRemoveMsg } from '@app/rmq/subscribe'
+import { PositionType, QueryParams, PartitionEnum, Doc } from './schema'
 
 @Injectable()
 export class VecstoreService {
