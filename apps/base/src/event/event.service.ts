@@ -30,11 +30,11 @@ export class EventService {
   }
 
   async getBatch(ids: number[]) {
-    const events = await this.prismaService.event.findMany({
+    const results = await this.prismaService.event.findMany({
       where: { id: { in: ids } },
     })
 
-    return events.map((v) => plainToInstance(EventEntity, v))
+    return plainToInstance(EventEntity, results)
   }
 
   async getAll({ size, page = 0 }: GetAllEventQueryDto) {
@@ -45,7 +45,7 @@ export class EventService {
       take: size,
     })
 
-    return results.map((v) => plainToInstance(EventEntity, v))
+    return plainToInstance(EventEntity, results)
   }
 
   /**
@@ -64,16 +64,16 @@ export class EventService {
         projectId,
       },
     })
-    return results.map((v) => plainToInstance(EventEntity, v))
+    return plainToInstance(EventEntity, results)
   }
 
   async getBySerial(serial: number) {
     const projectId = getProjectId()
-    const event = await this.prismaService.event.findUniqueOrThrow({
+    const result = await this.prismaService.event.findUniqueOrThrow({
       where: { serial_projectId: { serial, projectId } },
     })
 
-    return plainToInstance(EventEntity, event)
+    return plainToInstance(EventEntity, result)
   }
 
   async searchByName(text: string) {
@@ -81,7 +81,7 @@ export class EventService {
       return []
     }
     const serial = parseInt(text)
-    const events = await this.prismaService.event.findMany({
+    const results = await this.prismaService.event.findMany({
       where: {
         OR: [
           { serial: isNaN(serial) ? -1 : serial },
@@ -90,7 +90,7 @@ export class EventService {
       },
     })
 
-    return events.map((v) => plainToInstance(EventEntity, v))
+    return plainToInstance(EventEntity, results)
   }
 
   async create(dto: CreateEventDto) {
@@ -184,7 +184,7 @@ export class EventService {
       include: { todos: true },
     })
 
-    return todos.map((v) => plainToInstance(EventTodoEntity, v))
+    return plainToInstance(EventTodoEntity, todos)
   }
 
   async getTodo(id: number) {

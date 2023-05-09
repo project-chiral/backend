@@ -14,8 +14,6 @@ export interface EntityUpdateMsg {
 
 /**
  * 实体done状态变化消息
- *
- * projectId和ids为or关系
  */
 export interface EntityDoneMsg {
   type: EntityType
@@ -25,8 +23,6 @@ export interface EntityDoneMsg {
 
 /**
  * 实体移除消息
- *
- * projectId和ids为or关系
  */
 export interface EntityRemoveMsg {
   type: EntityType

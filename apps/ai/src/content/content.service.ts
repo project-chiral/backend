@@ -26,21 +26,28 @@ export class ContentService {
   async get({ type, id }: GetContentQueryDto) {
     const projectId = this.utils.getProjectId()
     const key = ContentKey({
-      projectId,
       type,
       id,
     })
     const content = await this.cache.get(key)
     if (!content) {
-      const doc = await this.vecstoreService.query({
-        type,
-        id,
-      })
+      const [doc] = await this.vecstoreService.query(
+        {
+          collection_name: type,
+        },
+        { ids: [id] }
+      )
       if (!doc) {
         throw new NotFoundException()
       }
 
-      const content = ContentEntity.fromDoc(doc)
+      const content = new ContentEntity(
+        id,
+        projectId,
+        type,
+        doc.pageContent,
+        doc.metadata.updateAt
+      )
       await this.cache.set(key, content)
       return content
     }
@@ -54,9 +61,8 @@ export class ContentService {
 
   async update({ type, id, content }: UpdateContentDto) {
     const projectId = this.utils.getProjectId()
-    const entity = new ContentEntity(new Date(), type, id, content)
+    const entity = new ContentEntity(id, projectId, type, content, new Date())
     const key = ContentKey({
-      projectId,
       type,
       id,
     })
@@ -76,31 +82,34 @@ export class ContentService {
           await this.cache.get(key)
         )
         await Promise.all([
-          this.vecstoreService.create(content.toDoc()),
+          this.vecstoreService.update(
+            { collection_name: type },
+            content.toDoc()
+          ),
           this.cache.del(key),
         ])
       }, 1000 * 60 * 60 * 24)
     )
   }
 
-  @Subscribe('entity_done')
-  protected async handleEntitiesDone({ type, ids, done }: EntityDoneMsg) {
+  @Subscribe('entity_done', 'ai_content')
+  protected async handleEntitiesDone({ type, ids }: EntityDoneMsg) {
     const contents = await this.getBatch({ type, ids })
-    await this.vecstoreService.updateMany(contents.map((c) => c.toDoc(done)))
+    await this.vecstoreService.updateMany(
+      { collection_name: type },
+      contents.map((c) => c.toDoc())
+    )
   }
 
-  @Subscribe('entity_remove')
-  protected async handleEntityRemove(msg: EntityRemoveMsg) {
-    const projectId = this.utils.getProjectId()
-
+  @Subscribe('entity_remove', 'ai_content')
+  protected async handleEntityRemove({ type, ids }: EntityRemoveMsg) {
     await Promise.all([
-      this.vecstoreService.deleteMany(msg),
+      this.vecstoreService.deleteMany({ collection_name: type }, ids),
       this.cache.del(
-        msg.ids.map((id) =>
+        ids.map((id) =>
           ContentKey({
-            type: msg.type,
+            type,
             id,
-            projectId,
           })
         )
       ),

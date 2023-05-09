@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { Milvus } from './milvus'
 import { OpenAIEmbeddings } from 'langchain/embeddings/openai'
-import { Doc, FilterType, IdType } from './types'
+import { Doc, PartitionEnum, PositionType, QueryParams } from './types'
 import { Subscribe } from '@app/rmq/decorator'
 import { EntityCreateMsg, EntityRemoveMsg } from '@app/rmq/subscribe'
 
@@ -17,78 +17,62 @@ export class VecstoreService {
     this.vecstore = new Milvus(this.embeddings, {
       collectionName: 'entity_content',
     })
-    this.vecstore.ensureCollection()
   }
 
-  /**
-   * 将redis中的数据flush到milvus中
-   */
-  async flush() {
-    // TODO
-    await this.vecstore.flush()
+  async search(position: PositionType, query: number[], k = 10) {
+    return this.vecstore.search(position, query, k)
   }
 
-  async search(query: string, filter?: FilterType, k = 1) {
-    return this.vecstore.similaritySearchWithScore(query, k, filter)
+  async query(position: PositionType, params: QueryParams) {
+    return this.vecstore.query(position, params)
   }
 
-  async query({ type, id }: IdType) {
-    const [result] = await this.vecstore.query({
-      type,
-      ids: [id],
-    })
-
-    return result?.[0]
+  async create(position: PositionType, doc: Doc) {
+    return this.vecstore.addDocuments(position, [doc])
   }
 
-  async queryMany(filter: FilterType) {
-    const result = await this.vecstore.query(filter)
-    return result.map((v) => v[0])
+  async createMany(position: PositionType, docs: Doc[]) {
+    return this.vecstore.addDocuments(position, docs)
   }
 
-  async create(doc: Doc) {
-    await this.vecstore.addDocuments([doc])
+  async update(position: PositionType, doc: Doc) {
+    await this.vecstore.delete(position, [doc.metadata.id])
+    await this.vecstore.addDocuments(position, [doc])
   }
 
-  async createMany(docs: Doc[]) {
-    await this.vecstore.addDocuments(docs)
+  async updateMany(position: PositionType, docs: Doc[]) {
+    await this.vecstore.delete(
+      position,
+      docs.map((doc) => doc.metadata.id)
+    )
+    await this.vecstore.addDocuments(position, docs)
   }
 
-  async update(doc: Doc) {
-    const meta = doc.metadata
-    await this.delete({
-      type: meta.type,
-      id: +meta.id,
-    })
-    await this.create(doc)
+  async delete(position: PositionType, id: number) {
+    return this.vecstore.delete(position, [id])
   }
 
-  async updateMany(docs: Doc[]) {
-    // TODO
-    await Promise.all(docs.map((doc) => this.update(doc)))
+  async deleteMany(position: PositionType, ids: number[]) {
+    return this.vecstore.delete(position, ids)
   }
 
-  async delete({ type, id }: IdType) {
-    return this.vecstore.delete({
-      type,
-      ids: [id],
-    })
-  }
-
-  async deleteMany(filter: FilterType) {
-    return this.vecstore.delete(filter)
-  }
-
-  @Subscribe('entity_create')
-  protected async handleEntityCreate({ type, ids }: EntityCreateMsg) {
+  @Subscribe('entity_create', 'ai_vecstore')
+  protected async handleEntityCreate({
+    type,
+    ids,
+    projectId,
+  }: EntityCreateMsg) {
     this.createMany(
+      {
+        collection_name: type,
+        partition_name: PartitionEnum.undone,
+      },
       ids.map(
         (id) =>
           new Doc({
             metadata: {
               id,
-              type,
-              done: false,
+              projectId,
               updateAt: new Date(),
             },
             pageContent: ' ',
@@ -97,8 +81,8 @@ export class VecstoreService {
     )
   }
 
-  @Subscribe('entity_remove')
-  protected async handleEntityRemove(msg: EntityRemoveMsg) {
-    await this.deleteMany(msg)
+  @Subscribe('entity_remove', 'ai_vecstore')
+  protected async handleEntityRemove({ type, ids }: EntityRemoveMsg) {
+    await this.deleteMany({ collection_name: type }, ids)
   }
 }

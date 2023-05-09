@@ -39,26 +39,30 @@ export const MILVUS_COLLECTION_NAME_PREFIX = 'langchain_col'
 /**
  * 筛选多个文档的条件
  */
-export interface FilterType {
+export interface QueryParams {
   ids?: number[]
   projectId?: number
-  type?: EntityType
-  done?: boolean
 }
 
-/**
- * 指定特定文档的条件
- */
-export interface IdType {
-  id: number
-  type: EntityType
+export enum PartitionEnum {
+  done = 'done',
+  undone = 'undone',
+}
+
+export interface PositionType {
+  collection_name: EntityType
+  partition_name?: PartitionEnum
 }
 
 export interface DocMetadata {
   id: number
-  type: EntityType
-  done: boolean
+  projectId: number
   updateAt: Date
+}
+
+export type Schema = DocMetadata & {
+  doc: string
+  vec: number[]
 }
 
 export class Doc extends Document<DocMetadata> {}

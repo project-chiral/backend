@@ -1,11 +1,4 @@
 import { EntityType } from '@app/rmq/types'
 
-export const ContentKey = ({
-  projectId,
-  type,
-  id,
-}: {
-  type: EntityType
-  projectId: number
-  id: number
-}) => `${projectId}/${type}/${id}/content`
+export const ContentKey = ({ type, id }: { type: EntityType; id: number }) =>
+  `${type}/${id}/content`

@@ -12,6 +12,6 @@ export type RmqSubscribeTypes = {
   entity_done: EntityDoneMsg
 }
 
-export type RmqSubscribeKeys = keyof RmqSubscribeTypes
+export type RmqTopic = keyof RmqSubscribeTypes
 
 export * from './entity'

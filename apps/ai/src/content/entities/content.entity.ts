@@ -5,32 +5,31 @@ export class ContentEntity {
   updateAt: Date
   type: EntityType
   id: number
+  projectId: number
   content: string
 
-  constructor(updateAt: Date, type: EntityType, id: number, content: string) {
+  constructor(
+    id: number,
+    projectId: number,
+    type: EntityType,
+    content: string,
+    updateAt: Date
+  ) {
     this.updateAt = updateAt
     this.type = type
     this.id = id
+    this.projectId = projectId
     this.content = content
   }
 
-  toDoc(done = false) {
+  toDoc() {
     return new Doc({
       metadata: {
-        done,
         id: this.id,
-        type: this.type,
+        projectId: this.projectId,
         updateAt: this.updateAt,
       },
       pageContent: this.content,
     })
-  }
-
-  static fromDoc(doc: Doc) {
-    const {
-      metadata: { updateAt, type, id },
-      pageContent,
-    } = doc
-    return new ContentEntity(updateAt, type, id, pageContent)
   }
 }

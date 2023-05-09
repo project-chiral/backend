@@ -136,8 +136,7 @@ export class CharaService {
     eventId: number,
     dtos: UnresolvedCharasDto[]
   ) {
-    const projectId = this.utils.getProjectId()
-    await this.cache.set(UnresolvedCharasKey({ projectId, eventId }), dtos)
+    await this.cache.set(UnresolvedCharasKey({ eventId }), dtos)
   }
 
   async getResolved(eventId: number) {
@@ -148,15 +147,8 @@ export class CharaService {
   }
 
   async getUnresolved(eventId: number) {
-    const projectId = this.utils.getProjectId()
-
     const resp =
-      (await this.cache.get<object[]>(
-        UnresolvedCharasKey({
-          projectId,
-          eventId,
-        })
-      )) ?? []
+      (await this.cache.get<object[]>(UnresolvedCharasKey({ eventId }))) ?? []
 
     return plainToInstance(UnresolvedCharasDto, resp)
   }
@@ -164,7 +156,7 @@ export class CharaService {
   /**
    * 角色信息更新后将redis中的角色表删除
    */
-  @Subscribe('entity_update')
+  @Subscribe('entity_update', 'ai_chara')
   protected async handleCharaUpdate({ type, projectId }: EntityUpdateMsg) {
     if (type !== 'chara') {
       return

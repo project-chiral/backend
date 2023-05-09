@@ -26,11 +26,6 @@ export class EventController {
 
   // ---------------------------------- event ---------------------------------
 
-  @Get(':id')
-  async get(@Param('id') id: number) {
-    return this.eventService.get(id)
-  }
-
   @Get('batch')
   async getBatch(@Query() { ids }: GetEventBatchDto) {
     return this.eventService.getBatch(ids)
@@ -49,6 +44,11 @@ export class EventController {
   @Get('search/name')
   searchByName(@Query('text') text: string) {
     return this.eventService.searchByName(text)
+  }
+
+  @Get(':id')
+  async get(@Param('id') id: number) {
+    return this.eventService.get(id)
   }
 
   @Post()
