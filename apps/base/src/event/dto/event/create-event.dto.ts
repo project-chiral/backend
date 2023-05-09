@@ -22,7 +22,7 @@ export class CreateEventDto {
 
   @IsString()
   @IsOptional()
-  description: string | null
+  description?: string
 
   @IsHexColor()
   color: string

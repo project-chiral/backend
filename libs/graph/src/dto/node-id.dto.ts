@@ -9,7 +9,7 @@ export class NodeIdDto {
   @ApiProperty({ enum: NodeEnum })
   type: NodeType
 
-  @Type(() => Number)
   @IsInt()
+  @Type(() => Number)
   id: number
 }
