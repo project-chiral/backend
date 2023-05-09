@@ -11,11 +11,11 @@ export class ContentController {
 
   @Get()
   get(@Query() query: GetContentQueryDto) {
-    return this.contentService.getContent(query)
+    return this.contentService.get(query)
   }
 
   @Put()
   update(@Body() dto: UpdateContentDto) {
-    return this.contentService.updateContent(dto)
+    return this.contentService.update(dto)
   }
 }

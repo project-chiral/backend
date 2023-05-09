@@ -32,12 +32,12 @@ export class BaseService {
   }
 
   async content(type: EntityType, id: number) {
-    return this.contentService.getContent({ type, id })
+    return this.contentService.get({ type, id })
   }
 
   async baseParams(type: EntityType, id: number) {
     const [{ content: doc }, lang] = await Promise.all([
-      this.contentService.getContent({
+      this.contentService.get({
         type,
         id,
       }),

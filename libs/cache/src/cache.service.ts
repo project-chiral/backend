@@ -7,7 +7,7 @@ export class CacheService extends Redis {
     super(process.env.REDIS_URL ?? '')
   }
 
-  async get<T>(key: string) {
+  async get<T = object>(key: string) {
     const data = await super.get(key)
     if (!data) {
       return null

@@ -50,7 +50,7 @@ export class QueryService {
   async generate({ n }: GenerateQueriesDto) {
     const ids = await this._getRandomEventIds(n)
     const contents = (
-      await this.contentService.getContents({
+      await this.contentService.getBatch({
         type: 'event',
         ids,
       })

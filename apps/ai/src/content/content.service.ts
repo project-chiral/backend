@@ -23,7 +23,7 @@ export class ContentService {
     private cache: CacheService
   ) {}
 
-  async getContent({ type, id }: GetContentQueryDto) {
+  async get({ type, id }: GetContentQueryDto) {
     const projectId = this.utils.getProjectId()
     const key = ContentKey({
       projectId,
@@ -48,11 +48,11 @@ export class ContentService {
     return plainToInstance(ContentEntity, content)
   }
 
-  async getContents({ type, ids }: GetContentsQueryDto) {
-    return Promise.all(ids.map((id) => this.getContent({ type, id })))
+  async getBatch({ type, ids }: GetContentsQueryDto) {
+    return Promise.all(ids.map((id) => this.get({ type, id })))
   }
 
-  async updateContent({ type, id, content }: UpdateContentDto) {
+  async update({ type, id, content }: UpdateContentDto) {
     const projectId = this.utils.getProjectId()
     const entity = new ContentEntity(new Date(), type, id, content)
     const key = ContentKey({
@@ -63,7 +63,9 @@ export class ContentService {
     await this.cache.set(key, entity)
 
     // 在redis数据超时前先将其保存到milvus中
-    this.schedule.deleteTimeout(key)
+    if (this.schedule.doesExist('timeout', key)) {
+      this.schedule.deleteTimeout(key)
+    }
     this.schedule.addTimeout(
       key,
       setTimeout(async () => {
@@ -71,7 +73,7 @@ export class ContentService {
         // 超时时重新读取，减轻内存压力
         const content = plainToInstance(
           ContentEntity,
-          await this.cache.get<object>(key)
+          await this.cache.get(key)
         )
         await Promise.all([
           this.vecstoreService.create(content.toDoc()),
@@ -83,22 +85,25 @@ export class ContentService {
 
   @Subscribe('entity_done')
   protected async handleEntitiesDone({ type, ids, done }: EntityDoneMsg) {
-    const contents = await this.getContents({ type, ids })
+    const contents = await this.getBatch({ type, ids })
     await this.vecstoreService.updateMany(contents.map((c) => c.toDoc(done)))
   }
 
   @Subscribe('entity_remove')
   protected async handleEntityRemove(msg: EntityRemoveMsg) {
     const projectId = this.utils.getProjectId()
-    await this.vecstoreService.deleteMany(msg)
-    await this.cache.del(
-      msg.ids?.map((id) =>
-        ContentKey({
-          type: msg.type,
-          id,
-          projectId,
-        })
-      ) ?? []
-    )
+
+    await Promise.all([
+      this.vecstoreService.deleteMany(msg),
+      this.cache.del(
+        msg.ids.map((id) =>
+          ContentKey({
+            type: msg.type,
+            id,
+            projectId,
+          })
+        )
+      ),
+    ])
   }
 }
