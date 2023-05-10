@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { plainToInstance } from 'class-transformer'
 import { PrismaService } from 'nestjs-prisma'
-import { getProjectId } from '../utils/get-header'
 import type { CreateEventDto } from './dto/event/create-event.dto'
 import type { UpdateEventDto } from './dto/event/update-event.dto'
 import { EventEntity } from './entities/event.entity'
@@ -37,8 +36,7 @@ export class EventService {
     return plainToInstance(EventEntity, results)
   }
 
-  async getAll({ size, page = 0 }: GetAllEventQueryDto) {
-    const projectId = getProjectId()
+  async getAll(projectId: number, { size, page = 0 }: GetAllEventQueryDto) {
     const results = await this.prismaService.event.findMany({
       where: { projectId },
       skip: (size ?? 0) * page,
@@ -53,8 +51,7 @@ export class EventService {
    * @param range 事件发生的时间范围
    * @param ids 事件的id列表
    */
-  async getByRange(unit: number, start: Date, end: Date) {
-    const projectId = getProjectId()
+  async getByRange(projectId: number, unit: number, start: Date, end: Date) {
     const results = await this.prismaService.event.findMany({
       where: {
         unit,
@@ -67,8 +64,7 @@ export class EventService {
     return plainToInstance(EventEntity, results)
   }
 
-  async getBySerial(serial: number) {
-    const projectId = getProjectId()
+  async getBySerial(projectId: number, serial: number) {
     const result = await this.prismaService.event.findUniqueOrThrow({
       where: { serial_projectId: { serial, projectId } },
     })
@@ -93,9 +89,7 @@ export class EventService {
     return plainToInstance(EventEntity, results)
   }
 
-  async create(dto: CreateEventDto) {
-    const projectId = getProjectId()
-
+  async create(projectId: number, dto: CreateEventDto) {
     // 生成事件序号
     const { serial } = await this.prismaService.project.update({
       where: { id: projectId },
@@ -121,7 +115,6 @@ export class EventService {
   }
 
   async update(id: number, dto: UpdateEventDto) {
-    const projectId = getProjectId()
     const result = await this.prismaService.event.update({
       where: { id },
       data: { ...dto },
@@ -129,7 +122,7 @@ export class EventService {
 
     this.rmqService.publish('entity_update', {
       type: 'event',
-      projectId,
+      projectId: result.projectId,
       ids: [id],
     })
 

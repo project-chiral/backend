@@ -33,14 +33,12 @@ export class GraphController {
 
   @Post('relation')
   async createRelation(@Body() dto: RelationIdDto) {
-    const projectId = this.utils.getProjectId()
-    return this.graphService.createRelation(projectId, dto)
+    return this.graphService.createRelation(dto)
   }
 
   @Post('relation/batch')
   async createRelations(@Body() dto: RelationIdDto[]) {
-    const projectId = this.utils.getProjectId()
-    return this.graphService.createRelations(projectId, dto)
+    return this.graphService.createRelations(dto)
   }
 
   @Delete('relation')

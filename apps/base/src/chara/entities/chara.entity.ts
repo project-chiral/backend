@@ -1,6 +1,6 @@
-import type { Character } from '@prisma/client'
+import type { Chara } from '@prisma/client'
 
-export class CharaEntity implements Character {
+export class CharaEntity implements Chara {
   id: number
   name: string
   alias: string[]

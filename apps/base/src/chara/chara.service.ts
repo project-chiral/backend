@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common'
 import type { CreateCharaDto } from './dto/create-chara.dto'
 import type { UpdateCharaDto } from './dto/update-chara.dto'
 import { PrismaService } from 'nestjs-prisma'
-import { getProjectId } from '../utils/get-header'
 import { plainToInstance } from 'class-transformer'
 import { CharaEntity } from './entities/chara.entity'
 import { ToggleDoneDto } from '../dto/toggle-done.dto'
@@ -16,26 +15,23 @@ export class CharaService {
   ) {}
 
   async get(id: number) {
-    const chara = await this.prismaService.character.findUniqueOrThrow({
+    const chara = await this.prismaService.chara.findUniqueOrThrow({
       where: { id },
     })
 
     return plainToInstance(CharaEntity, chara)
   }
 
-  async getAll() {
-    const projectId = getProjectId()
-
-    const charas = await this.prismaService.character.findMany({
+  async getAll(projectId: number) {
+    const charas = await this.prismaService.chara.findMany({
       where: { projectId },
     })
 
     return charas.map((chara) => plainToInstance(CharaEntity, chara))
   }
 
-  async create(dto: CreateCharaDto) {
-    const projectId = getProjectId()
-    const chara = await this.prismaService.character.create({
+  async create(projectId: number, dto: CreateCharaDto) {
+    const chara = await this.prismaService.chara.create({
       data: {
         ...dto,
         projectId,
@@ -52,15 +48,14 @@ export class CharaService {
   }
 
   async update(id: number, dto: UpdateCharaDto) {
-    const projectId = getProjectId()
-    const chara = await this.prismaService.character.update({
+    const chara = await this.prismaService.chara.update({
       where: { id },
       data: dto,
     })
 
     this.rmqService.publish('entity_update', {
       type: 'chara',
-      projectId,
+      projectId: chara.projectId,
       ids: [id],
     })
 
@@ -68,7 +63,7 @@ export class CharaService {
   }
 
   async toggleDone(id: number, { done }: ToggleDoneDto) {
-    const result = await this.prismaService.character.update({
+    const result = await this.prismaService.chara.update({
       where: { id },
       data: { done },
     })
@@ -83,7 +78,7 @@ export class CharaService {
   }
 
   async remove(id: number) {
-    const chara = await this.prismaService.character.delete({
+    const chara = await this.prismaService.chara.delete({
       where: { id },
     })
 
@@ -96,7 +91,7 @@ export class CharaService {
   }
 
   async searchByName(name: string) {
-    const charas = await this.prismaService.character.findMany({
+    const charas = await this.prismaService.chara.findMany({
       where: {
         name: { contains: name },
       },

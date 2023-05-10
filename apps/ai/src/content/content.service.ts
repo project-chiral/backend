@@ -7,7 +7,6 @@ import {
 } from './dto/get-content-query.dto'
 import { Subscribe } from '@app/rmq/decorator'
 import { EntityDoneMsg, EntityRemoveMsg } from '@app/rmq/subscribe'
-import { UtilsService } from '@app/utils'
 import { ContentEntity } from './entities/content.entity'
 import { ContentKey } from './const'
 import { SchedulerRegistry } from '@nestjs/schedule'
@@ -15,18 +14,18 @@ import { plainToInstance } from 'class-transformer'
 import { CacheService } from '@app/cache'
 import { SearchContentQueryDto } from './dto/search-content-query.dto'
 import { PartitionEnum } from '../vecstore/schema'
+import { PrismaService } from 'nestjs-prisma'
 
 @Injectable()
 export class ContentService {
   constructor(
     private readonly vecstoreService: VecstoreService,
-    private readonly utils: UtilsService,
     private readonly schedule: SchedulerRegistry,
+    private readonly prismaService: PrismaService,
     private cache: CacheService
   ) {}
 
   async get({ type, id }: GetContentQueryDto) {
-    const projectId = this.utils.getProjectId()
     const key = ContentKey({
       type,
       id,
@@ -45,7 +44,7 @@ export class ContentService {
 
       const content = new ContentEntity(
         id,
-        projectId,
+        doc.metadata.projectId,
         type,
         doc.pageContent,
         doc.metadata.updateAt
@@ -77,13 +76,15 @@ export class ContentService {
   }
 
   async update({ type, id, content }: UpdateContentDto) {
-    const projectId = this.utils.getProjectId()
-    const entity = new ContentEntity(id, projectId, type, content, new Date())
+    const result = await this.get({ type, id })
+    result.content = content
+    result.updateAt = new Date()
+
     const key = ContentKey({
       type,
       id,
     })
-    await this.cache.set(key, entity)
+    await this.cache.set(key, result)
 
     // 在redis数据超时前先将其保存到milvus中
     if (this.schedule.doesExist('timeout', key)) {

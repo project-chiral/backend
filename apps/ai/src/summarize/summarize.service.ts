@@ -19,24 +19,20 @@ export class SummarizeService {
     this.llm = new OpenAI({ modelName: 'gpt-3.5-turbo' })
   }
 
-  async title(eventId: number) {
-    const base = await this.baseService.baseParams('event', eventId)
-    const resp = await this.llm.call(
-      SummarizeTitlePrompt({
-        ...base,
-      })
-    )
+  async title(id: number) {
+    const base = await this.baseService.baseParams('event', id)
+    const resp = await this.llm.call(SummarizeTitlePrompt({ ...base }))
 
     await this.prismaService.event.update({
-      where: { id: eventId },
+      where: { id },
       data: { name: resp },
     })
 
     return resp
   }
 
-  async desc(eventId: number, params: SummarizeDescParams) {
-    const base = await this.baseService.baseParams('event', eventId)
+  async desc(id: number, params: SummarizeDescParams) {
+    const base = await this.baseService.baseParams('event', id)
     const resp = await this.llm.call(
       SummarizeDescPrompt({
         ...base,
@@ -45,7 +41,7 @@ export class SummarizeService {
     )
 
     await this.prismaService.event.update({
-      where: { id: eventId },
+      where: { id },
       data: { description: resp },
     })
 

@@ -2,7 +2,6 @@ import { Injectable } from '@nestjs/common'
 import { PrismaService } from 'nestjs-prisma'
 import { CharaList } from './types'
 import { CharaListKey, ResolvedCharasKey, UnresolvedCharasKey } from './const'
-import { UtilsService } from '@app/utils'
 import { Subscribe } from '@app/rmq/decorator'
 import { EntityUpdateMsg } from '@app/rmq/subscribe'
 import { CharaOption, UnresolvedCharasDto } from './dto/unresolved.dto'
@@ -25,17 +24,15 @@ export class CharaService {
     private readonly prismaService: PrismaService,
     private readonly graphService: GraphService,
     private readonly baseService: BaseService,
-    private readonly utils: UtilsService,
     private readonly cache: CacheService
   ) {
     this.llm = new OpenAI({ modelName: 'gpt-3.5-turbo', maxTokens: 512 })
   }
 
-  protected async _charaList() {
-    const projectId = this.utils.getProjectId()
+  protected async _charaList(projectId: number) {
     const list = await this.cache.get<CharaList>(CharaListKey({ projectId }))
     if (!list) {
-      const charas = await this.prismaService.character.findMany({
+      const charas = await this.prismaService.chara.findMany({
         where: { projectId },
         select: { id: true, name: true, alias: true },
       })
@@ -88,9 +85,14 @@ export class CharaService {
   }
 
   async resolve(eventId: number) {
+    const { projectId } = await this.prismaService.event.findUniqueOrThrow({
+      where: { id: eventId },
+      select: { projectId: true },
+    })
+
     const [{ doc, lang }, list] = await Promise.all([
       this.baseService.baseParams('event', eventId),
-      this._charaList(),
+      this._charaList(projectId),
     ])
 
     const names = await this.recognize(doc)
@@ -122,8 +124,6 @@ export class CharaService {
   }
 
   private async _handleResolved(eventId: number, ids: number[]) {
-    const projectId = this.utils.getProjectId()
-
     await Promise.all([
       this.cache.setWithExpire(
         ResolvedCharasKey({ eventId }),
@@ -131,7 +131,6 @@ export class CharaService {
         1000 * 60 * 60 * 24
       ),
       this.graphService.createRelations(
-        projectId,
         ids.map((id) => ({
           type: PARTICIPATED_IN,
           from: id,
@@ -187,8 +186,6 @@ export class CharaService {
   }
 
   async addResolved(eventId: number, charaId: number) {
-    const projectId = this.utils.getProjectId()
-
     const resolved = await this.getResolved(eventId)
 
     await Promise.all([
@@ -197,7 +194,7 @@ export class CharaService {
         [...resolved, charaId],
         1000 * 60 * 60 * 24
       ),
-      this.graphService.createRelation(projectId, {
+      this.graphService.createRelation({
         type: PARTICIPATED_IN,
         from: charaId,
         to: eventId,

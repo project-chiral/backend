@@ -1,4 +1,3 @@
-import { UtilsService } from '@app/utils'
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from 'nestjs-prisma'
 import { LangKey } from '../const'
@@ -9,14 +8,34 @@ import { CacheService } from '@app/cache'
 @Injectable()
 export class BaseService {
   constructor(
-    private readonly utils: UtilsService,
     private readonly cache: CacheService,
     private readonly contentService: ContentService,
     private readonly prismaService: PrismaService
   ) {}
 
-  async lang() {
-    const projectId = this.utils.getProjectId()
+  private async _getProjectId(type: EntityType, id: number) {
+    const filter = {
+      where: { id },
+      select: { projectId: true },
+    }
+
+    switch (type) {
+      case 'event':
+        return (await this.prismaService.event.findUniqueOrThrow(filter))
+          .projectId
+      case 'chara':
+        return (await this.prismaService.chara.findUniqueOrThrow(filter))
+          .projectId
+      case 'scene':
+        return (await this.prismaService.scene.findUniqueOrThrow(filter))
+          .projectId
+      case 'worldview':
+        return (await this.prismaService.worldview.findUniqueOrThrow(filter))
+          .projectId
+    }
+  }
+
+  async lang(projectId: number) {
     const lang = await this.cache.get<string>(LangKey({ projectId }))
 
     if (!lang) {
@@ -36,12 +55,13 @@ export class BaseService {
   }
 
   async baseParams(type: EntityType, id: number) {
+    const projectId = await this._getProjectId(type, id)
     const [{ content: doc }, lang] = await Promise.all([
       this.contentService.get({
         type,
         id,
       }),
-      this.lang(),
+      this.lang(projectId),
     ])
 
     return {

@@ -18,11 +18,15 @@ import { UpdateTodoDto } from './dto/todo/update-todo.dto'
 import { EventService } from './event.service'
 import { GetEventBatchDto } from './dto/event/get-event-batch.dto'
 import { ToggleDoneDto } from '../dto/toggle-done.dto'
+import { UtilsService } from '@app/utils'
 
 @ApiTags('event')
 @Controller('event')
 export class EventController {
-  constructor(private readonly eventService: EventService) {}
+  constructor(
+    private readonly eventService: EventService,
+    private readonly utils: UtilsService
+  ) {}
 
   // ---------------------------------- event ---------------------------------
 
@@ -33,12 +37,17 @@ export class EventController {
 
   @Get('list')
   async getAll(@Query() dto: GetAllEventQueryDto) {
-    return this.eventService.getAll(dto)
+    return this.eventService.getAll(this.utils.getProjectId(), dto)
   }
 
   @Get('list/range')
   getByRange(@Query() { unit, start, end }: GetEventsByRangeQueryDto) {
-    return this.eventService.getByRange(unit, start, end)
+    return this.eventService.getByRange(
+      this.utils.getProjectId(),
+      unit,
+      start,
+      end
+    )
   }
 
   @Get('search/name')
@@ -53,7 +62,7 @@ export class EventController {
 
   @Post()
   create(@Body() dto: CreateEventDto) {
-    return this.eventService.create(dto)
+    return this.eventService.create(this.utils.getProjectId(), dto)
   }
 
   @Put(':id')

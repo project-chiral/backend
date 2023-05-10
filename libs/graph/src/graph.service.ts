@@ -50,12 +50,12 @@ export class GraphService {
     )
   }
 
-  async createRelation(projectId: number, { from, to, type }: RelationIdDto) {
+  async createRelation({ from, to, type }: RelationIdDto) {
     const { from: fromType, to: toType } = RelationSchema[type]
     const query = await this.cypherService.execute`
     match 
-      (from:${fromType} ${{ id: from, projectId }}),
-      (to:${toType} ${{ id: to, projectId }})
+      (from:${fromType} ${{ id: from }}),
+      (to:${toType} ${{ id: to }})
     merge (from)-[r:${type}]->(to)
     return r
     `.run()
@@ -66,7 +66,7 @@ export class GraphService {
     )
   }
 
-  async createRelations(projectId: number, dtos: RelationIdDto[]) {
+  async createRelations(dtos: RelationIdDto[]) {
     // cypher中节点的label不能作为参数，因此只能先根据type归类，再分别执行
     const typeMap = {} as Record<string, { from?: number; to?: number }[]>
     for (const { from, to, type } of dtos) {
@@ -83,8 +83,8 @@ export class GraphService {
           return this.cypherService.execute`
         unwind ${dtos} as data
         match 
-          (from:${fromType} {id:data.from, projectId:${projectId}}), 
-          (to:${toType} {id:data.to, projectId:${projectId}})
+          (from:${fromType} {id:data.from}), 
+          (to:${toType} {id:data.to})
         merge (from)-[r:${type}]->(to)
         return r
         `.run()

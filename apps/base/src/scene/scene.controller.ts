@@ -14,15 +14,19 @@ import { SceneService } from './scene.service'
 import { CreateSceneDto } from './dto/create-scene.dto'
 import { UpdateSceneDto } from './dto/update-scene.dto'
 import { ToggleDoneDto } from '../dto/toggle-done.dto'
+import { UtilsService } from '@app/utils'
 
 @ApiTags('scene')
 @Controller('scene')
 export class SceneController {
-  constructor(private readonly sceneService: SceneService) {}
+  constructor(
+    private readonly sceneService: SceneService,
+    private readonly utils: UtilsService
+  ) {}
 
   @Post()
   create(@Body() dto: CreateSceneDto) {
-    return this.sceneService.create(dto)
+    return this.sceneService.create(this.utils.getProjectId(), dto)
   }
 
   @Get(':id')

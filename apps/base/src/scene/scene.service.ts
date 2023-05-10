@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { plainToInstance } from 'class-transformer'
 import { PrismaService } from 'nestjs-prisma'
-import { getProjectId } from '../utils/get-header'
 import { CreateSceneDto } from './dto/create-scene.dto'
 import { UpdateSceneDto } from './dto/update-scene.dto'
 import { SceneEntity } from './entities/scene.entity'
@@ -23,8 +22,7 @@ export class SceneService {
     return plainToInstance(SceneEntity, scene)
   }
 
-  async create(dto: CreateSceneDto) {
-    const projectId = getProjectId()
+  async create(projectId: number, dto: CreateSceneDto) {
     const result = await this.prismaService.scene.create({
       data: {
         ...dto,
@@ -42,7 +40,6 @@ export class SceneService {
   }
 
   async update(id: number, dto: UpdateSceneDto) {
-    const projectId = getProjectId()
     const scene = await this.prismaService.scene.update({
       where: { id },
       data: dto,
@@ -50,7 +47,7 @@ export class SceneService {
 
     this.rmqService.publish('entity_update', {
       type: 'scene',
-      projectId,
+      projectId: scene.projectId,
       ids: [id],
     })
 

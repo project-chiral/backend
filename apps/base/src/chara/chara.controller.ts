@@ -12,20 +12,24 @@ import { CreateCharaDto } from './dto/create-chara.dto'
 import { UpdateCharaDto } from './dto/update-chara.dto'
 import { ApiTags } from '@nestjs/swagger'
 import { ToggleDoneDto } from '../dto/toggle-done.dto'
+import { UtilsService } from '@app/utils'
 
 @ApiTags('chara')
 @Controller('chara')
 export class CharaController {
-  constructor(private readonly charaService: CharaService) {}
+  constructor(
+    private readonly charaService: CharaService,
+    private readonly utils: UtilsService
+  ) {}
 
   @Post()
   create(@Body() dto: CreateCharaDto) {
-    return this.charaService.create(dto)
+    return this.charaService.create(this.utils.getProjectId(), dto)
   }
 
   @Get()
   getAll() {
-    return this.charaService.getAll()
+    return this.charaService.getAll(this.utils.getProjectId())
   }
 
   @Get(':id')

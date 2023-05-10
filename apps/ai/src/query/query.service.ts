@@ -1,7 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { GenerateQueriesDto } from './dto/generate.dto'
 import { PrismaService } from 'nestjs-prisma'
-import { UtilsService } from '@app/utils'
 import { ContentService } from '../content/content.service'
 import { BaseService } from '../base/base.service'
 import { QueryGeneratePrompt } from './prompt'
@@ -12,7 +11,6 @@ export class QueryService {
   llm: OpenAI
 
   constructor(
-    private readonly utils: UtilsService,
     private readonly baseService: BaseService,
     private readonly prismaService: PrismaService,
     private readonly contentService: ContentService
@@ -20,8 +18,7 @@ export class QueryService {
     this.llm = new OpenAI({ modelName: 'gpt-3.5-turbo' })
   }
 
-  private async _getRandomEventIds(n: number) {
-    const projectId = this.utils.getProjectId()
+  private async _getRandomEventIds(projectId: number, n: number) {
     const count = await this.prismaService.event.count({
       where: { projectId },
     })
@@ -35,8 +32,8 @@ export class QueryService {
     return [...result]
   }
 
-  private async _generate(doc: string) {
-    const lang = await this.baseService.lang()
+  private async _generate(projectId: number, doc: string) {
+    const lang = await this.baseService.lang(projectId)
     const resp = await this.llm.call(
       QueryGeneratePrompt({
         doc,
@@ -47,8 +44,8 @@ export class QueryService {
     return resp
   }
 
-  async generate({ n }: GenerateQueriesDto) {
-    const ids = await this._getRandomEventIds(n)
+  async generate(projectId: number, { n }: GenerateQueriesDto) {
+    const ids = await this._getRandomEventIds(projectId, n)
     const contents = (
       await this.contentService.getBatch({
         type: 'event',
@@ -57,7 +54,7 @@ export class QueryService {
     ).map(({ content }) => content)
 
     const result = await Promise.all(
-      contents.map((content) => this._generate(content))
+      contents.map((content) => this._generate(projectId, content))
     )
 
     return result
