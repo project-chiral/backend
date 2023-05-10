@@ -40,13 +40,15 @@ export class VecstoreService {
   }
 
   async update(position: PositionType, doc: Doc) {
-    await this.vecstore.delete(position, [doc.metadata.id])
+    await this.vecstore.delete({ collection_name: position.collection_name }, [
+      doc.metadata.id,
+    ])
     await this.vecstore.addDocuments(position, [doc])
   }
 
   async updateMany(position: PositionType, docs: Doc[]) {
     await this.vecstore.delete(
-      position,
+      { collection_name: position.collection_name },
       docs.map((doc) => doc.metadata.id)
     )
     await this.vecstore.addDocuments(position, docs)

@@ -14,6 +14,7 @@ import { SchedulerRegistry } from '@nestjs/schedule'
 import { plainToInstance } from 'class-transformer'
 import { CacheService } from '@app/cache'
 import { SearchContentQueryDto } from './dto/search-content-query.dto'
+import { PartitionEnum } from '../vecstore/schema'
 
 @Injectable()
 export class ContentService {
@@ -109,10 +110,11 @@ export class ContentService {
   }
 
   @Subscribe('entity_done', 'ai_content')
-  protected async handleEntitiesDone({ type, ids }: EntityDoneMsg) {
+  protected async handleEntitiesDone({ type, ids, done }: EntityDoneMsg) {
     const contents = await this.getBatch({ type, ids })
+    const partition_name = done ? PartitionEnum.done : PartitionEnum.undone
     await this.vecstoreService.updateMany(
-      { collection_name: type },
+      { collection_name: type, partition_name },
       contents.map((c) => c.toDoc())
     )
   }
