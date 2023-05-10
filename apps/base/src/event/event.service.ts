@@ -151,7 +151,7 @@ export class EventService {
     })
 
     const subs = await this.prismaService.event.findMany({
-      where: { path: { startsWith: result.path } },
+      where: { path: { startsWith: `${result.path}/` } },
       select: { id: true },
     })
     const subIds = subs.map((v) => v.id)
