@@ -8,6 +8,18 @@ const removeUndefined = (data: Record<string, any>) =>
     .filter((key) => data[key] !== null && data[key] !== undefined)
     .reduce((acc, key) => ({ ...acc, [key]: data[key] }), {})
 
+const format = (value: any) => {
+  if (typeof value === 'object') {
+    if (Array.isArray(value)) {
+      return util.inspect(value)
+    } else {
+      return util.inspect(removeUndefined(value))
+    }
+  } else {
+    return `${value}`
+  }
+}
+
 @Injectable()
 export class CypherService extends Connection implements OnApplicationShutdown {
   constructor() {
@@ -26,16 +38,7 @@ export class CypherService extends Connection implements OnApplicationShutdown {
     let query = ''
     for (let i = 0; i < strs.length + args.length; ++i) {
       const pos = Math.floor(i / 2)
-      if (i % 2 === 0) {
-        query += strs[pos]
-      } else {
-        const value = args[pos]
-        query +=
-          typeof value === 'object'
-            ? // 转换为不含双引号的JSON
-              util.inspect(value)
-            : `${value}`
-      }
+      query += i % 2 === 0 ? strs[pos] : format(args[pos])
     }
 
     return this.raw(query)
