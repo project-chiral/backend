@@ -13,6 +13,7 @@ import { ContentKey } from './const'
 import { SchedulerRegistry } from '@nestjs/schedule'
 import { plainToInstance } from 'class-transformer'
 import { CacheService } from '@app/cache'
+import { SearchContentQueryDto } from './dto/search-content-query.dto'
 
 @Injectable()
 export class ContentService {
@@ -57,6 +58,21 @@ export class ContentService {
 
   async getBatch({ type, ids }: GetContentsQueryDto) {
     return Promise.all(ids.map((id) => this.get({ type, id })))
+  }
+
+  async search({ type, query, k }: SearchContentQueryDto) {
+    const result = await this.vecstoreService.simSearch(type, query, k)
+
+    return result.map(
+      ([doc]) =>
+        new ContentEntity(
+          doc.metadata.id,
+          doc.metadata.projectId,
+          type,
+          doc.pageContent,
+          doc.metadata.updateAt
+        )
+    )
   }
 
   async update({ type, id, content }: UpdateContentDto) {

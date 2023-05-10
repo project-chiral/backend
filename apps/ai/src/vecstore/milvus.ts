@@ -2,7 +2,7 @@ import { MilvusClient } from '@zilliz/milvus2-sdk-node'
 import { DataType } from '@zilliz/milvus2-sdk-node/dist/milvus/const/Milvus.js'
 import { ErrorCode } from '@zilliz/milvus2-sdk-node/dist/milvus/types.js'
 import { Embeddings } from 'langchain/embeddings/base'
-import { IndexParam, IndexType, MilvusLibArgs } from './types'
+import { IndexParam, IndexType } from './types'
 import { EntityType } from '@app/rmq/types'
 import { QueryParams, PositionType, PartitionEnum, Doc } from './schema'
 
@@ -34,7 +34,15 @@ export class Milvus {
 
   indexSearchParams = JSON.stringify({ ef: 64 })
 
-  constructor(embeddings: Embeddings, args: MilvusLibArgs) {
+  constructor(
+    embeddings: Embeddings,
+    args: {
+      url?: string
+      ssl?: boolean
+      username?: string
+      password?: string
+    }
+  ) {
     this.embeddings = embeddings
 
     this.fields = ['id', 'doc', 'vec', 'projectId', 'updateAt']
@@ -69,6 +77,7 @@ export class Milvus {
 
   async addDocuments(position: PositionType, documents: Doc[]): Promise<void> {
     let vecs: number[][]
+    // 如果是未完成的文档，不进行embedding，直接填充0向量
     if (position.partition_name === PartitionEnum.undone) {
       vecs = Array(documents.length).fill(Array(VECTOR_DIM).fill(0))
     } else {
@@ -86,9 +95,6 @@ export class Milvus {
     )
   }
 
-  /**
-   * 将不同分区的向量和文档归类，分别插入到不同的分区
-   */
   async addVectors(
     position: PositionType,
     data: {

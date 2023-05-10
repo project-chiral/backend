@@ -4,6 +4,7 @@ import { OpenAIEmbeddings } from 'langchain/embeddings/openai'
 import { Subscribe } from '@app/rmq/decorator'
 import { EntityCreateMsg, EntityRemoveMsg } from '@app/rmq/subscribe'
 import { PositionType, QueryParams, PartitionEnum, Doc } from './schema'
+import { EntityType } from '@app/rmq/types'
 
 @Injectable()
 export class VecstoreService {
@@ -14,13 +15,16 @@ export class VecstoreService {
     this.embeddings = new OpenAIEmbeddings({
       modelName: 'text-embedding-ada-002',
     })
-    this.vecstore = new Milvus(this.embeddings, {
-      collectionName: 'entity_content',
-    })
+    this.vecstore = new Milvus(this.embeddings, {})
   }
 
-  async search(position: PositionType, query: number[], k = 10) {
-    return this.vecstore.search(position, query, k)
+  async search(type: EntityType, query: number[], k = 10) {
+    return this.vecstore.search({ collection_name: type }, query, k)
+  }
+
+  async simSearch(type: EntityType, query: string, k = 10) {
+    const vec = await this.embeddings.embedDocuments([query])[0]
+    return this.search(type, vec, k)
   }
 
   async query(position: PositionType, params: QueryParams) {
