@@ -2,35 +2,22 @@ import { MilvusClient } from '@zilliz/milvus2-sdk-node'
 import { DataType } from '@zilliz/milvus2-sdk-node/dist/milvus/const/Milvus.js'
 import { ErrorCode } from '@zilliz/milvus2-sdk-node/dist/milvus/types.js'
 import { Embeddings } from 'langchain/embeddings/base'
-import { IndexParam, IndexType } from './types'
 import { EntityType } from '@app/rmq/types'
-import { QueryParams, PositionType, PartitionEnum, Doc } from './schema'
-
-const VECTOR_DIM = 1536
+import {
+  QueryParams,
+  PositionType,
+  PartitionEnum,
+  Doc,
+  VECTOR_DIM,
+  IndexCreateParams,
+  Fields,
+} from './schema'
 
 export class Milvus {
   FilterType: QueryParams
   fields: string[]
   client: MilvusClient
   embeddings: Embeddings
-
-  indexParams: Record<IndexType, IndexParam> = {
-    IVF_FLAT: { params: { nprobe: 10 } },
-    IVF_SQ8: { params: { nprobe: 10 } },
-    IVF_PQ: { params: { nprobe: 10 } },
-    HNSW: { params: { ef: 10 } },
-    RHNSW_FLAT: { params: { ef: 10 } },
-    RHNSW_SQ: { params: { ef: 10 } },
-    RHNSW_PQ: { params: { ef: 10 } },
-    IVF_HNSW: { params: { nprobe: 10, ef: 10 } },
-    ANNOY: { params: { search_k: 10 } },
-  }
-
-  indexCreateParams = {
-    index_type: 'HNSW',
-    metric_type: 'L2',
-    params: JSON.stringify({ M: 8, efConstruction: 64 }),
-  }
 
   indexSearchParams = JSON.stringify({ ef: 64 })
 
@@ -45,7 +32,7 @@ export class Milvus {
   ) {
     this.embeddings = embeddings
 
-    this.fields = ['id', 'doc', 'vec', 'projectId', 'updateAt']
+    this.fields = Fields.map((v) => v.name)
 
     const url =
       args.url ??
@@ -76,6 +63,8 @@ export class Milvus {
   }
 
   async addDocuments(position: PositionType, documents: Doc[]): Promise<void> {
+    await this.ensureCollection(position.collection_name)
+
     let vecs: number[][]
     // 如果是未完成的文档，不进行embedding，直接填充0向量
     if (position.partition_name === PartitionEnum.undone) {
@@ -102,6 +91,8 @@ export class Milvus {
       vec: number[]
     }[]
   ): Promise<void> {
+    await this.loadCollection(position)
+
     if (data.length === 0) {
       return
     }
@@ -124,25 +115,19 @@ export class Milvus {
     await this.flush([position.collection_name])
   }
 
-  async loadCollection(position: PositionType) {
-    const hasColResp = await this.client.hasCollection({
+  async delete(position: PositionType, ids: number[]) {
+    await this.ensureCollection(position.collection_name)
+
+    const deleteResp = await this.client.deleteEntities({
       ...position,
+      expr: `id in [${ids}]`,
     })
-    if (hasColResp.status.error_code !== ErrorCode.SUCCESS) {
-      throw new Error(`Error checking collection: ${hasColResp}`)
-    }
-    if (hasColResp.value === false) {
-      throw new Error(
-        `Collection not found: ${position}, please create collection before search.`
-      )
+
+    if (deleteResp.status.error_code !== ErrorCode.SUCCESS) {
+      throw new Error(`Error deleting data: ${JSON.stringify(deleteResp)}`)
     }
 
-    const loadResp = await this.client.loadCollectionSync({
-      ...position,
-    })
-    if (loadResp.error_code !== ErrorCode.SUCCESS) {
-      throw new Error(`Error loading collection: ${loadResp}`)
-    }
+    return deleteResp
   }
 
   async search(
@@ -159,7 +144,7 @@ export class Milvus {
       search_params: {
         anns_field: 'vec',
         topk: k?.toString(),
-        metric_type: this.indexCreateParams.metric_type,
+        metric_type: IndexCreateParams.metric_type,
         params: this.indexSearchParams,
       },
       vector_type: DataType.FloatVector,
@@ -214,22 +199,76 @@ export class Milvus {
     )
   }
 
-  async delete(position: PositionType, ids: number[]) {
-    const deleteResp = await this.client.deleteEntities({
-      ...position,
-      expr: `id in [${ids}]`,
-    })
-
-    if (deleteResp.status.error_code !== ErrorCode.SUCCESS) {
-      throw new Error(`Error deleting data: ${JSON.stringify(deleteResp)}`)
-    }
-
-    return deleteResp
-  }
-
   async flush(collection_names: EntityType[]) {
+    await Promise.all(
+      collection_names.map((collection_name) =>
+        this.ensureCollection(collection_name)
+      )
+    )
+
     await this.client.flushSync({
       collection_names,
     })
+  }
+
+  async ensureCollection(collection_name: EntityType) {
+    const hasColResp = await this.client.hasCollection({
+      collection_name,
+    })
+    if (hasColResp.status.error_code !== ErrorCode.SUCCESS) {
+      throw new Error(`Error checking collection: ${hasColResp}`)
+    }
+    if (hasColResp.value === true) {
+      return
+    }
+
+    const createResp = await this.client.createCollection({
+      collection_name,
+      fields: Fields,
+    })
+
+    if (createResp.error_code !== ErrorCode.SUCCESS) {
+      throw new Error(`Error creating collection: ${createResp.reason}`)
+    }
+
+    const createIndexResp = await this.client.createIndex({
+      collection_name,
+      field_name: 'vec',
+      extra_params: IndexCreateParams,
+    })
+
+    if (createIndexResp.error_code !== ErrorCode.SUCCESS) {
+      throw new Error(`Error creating index: ${createIndexResp}`)
+    }
+
+    for (const partition_name of [PartitionEnum.done, PartitionEnum.undone]) {
+      const createPartitionResp = await this.client.createPartition({
+        collection_name,
+        partition_name,
+      })
+
+      if (createPartitionResp.error_code !== ErrorCode.SUCCESS) {
+        throw new Error(`Error creating partition: ${createPartitionResp}`)
+      }
+    }
+  }
+
+  async loadCollection(position: PositionType) {
+    const hasColResp = await this.client.hasCollection({
+      ...position,
+    })
+    if (hasColResp.status.error_code !== ErrorCode.SUCCESS) {
+      throw new Error(`Error checking collection: ${hasColResp}`)
+    }
+    if (hasColResp.value === false) {
+      await this.ensureCollection(position.collection_name)
+    }
+
+    const loadResp = await this.client.loadCollectionSync({
+      ...position,
+    })
+    if (loadResp.error_code !== ErrorCode.SUCCESS) {
+      throw new Error(`Error loading collection: ${loadResp}`)
+    }
   }
 }
