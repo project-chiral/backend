@@ -1,12 +1,12 @@
 import { Injectable } from '@nestjs/common'
-import { TaskService } from '../task/task.service'
 import { RemoveFileDto } from './dto/remove-file.dto'
 import { UploadFileDto } from './dto/upload-file.dto'
 import hasha from 'hasha'
 import { extension } from 'mime-types'
-import { rename, rm, writeFile } from 'fs/promises'
+import { readdir, rename, rm, stat, unlink, writeFile } from 'fs/promises'
 import path from 'path'
 import { filesPath, tempFilePath } from './const/path'
+import { Interval } from '@nestjs/schedule'
 
 const getChecksum = (file: Express.Multer.File) => {
   const { buffer } = file
@@ -15,8 +15,6 @@ const getChecksum = (file: Express.Multer.File) => {
 
 @Injectable()
 export class FileService {
-  constructor(private readonly taskService: TaskService) {}
-
   async upload({ position }: UploadFileDto, file: Express.Multer.File) {
     const ext = extension(file.mimetype)
     const positionWithExt = `${position}.${ext}`
@@ -45,6 +43,24 @@ export class FileService {
     await rename(
       path.join(tempFilePath, nameWithExt),
       path.join(filesPath, positionWithExt)
+    )
+  }
+
+  @Interval(1000 * 60 * 60 * 24)
+  async clearTempFile() {
+    const names = await readdir(tempFilePath)
+    const nowStamp = new Date().valueOf()
+
+    await Promise.all(
+      names.map(async (name) => {
+        const filePath = path.join(tempFilePath, name)
+        const { birthtime } = await stat(filePath)
+        const birthStamp = birthtime.valueOf()
+
+        return nowStamp - birthStamp > 1000 * 60 * 60 * 24
+          ? unlink(filePath)
+          : Promise.resolve()
+      })
     )
   }
 }

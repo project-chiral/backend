@@ -8,7 +8,6 @@ import { AppService } from './app.service'
 import { EventModule } from './event/event.module'
 import { CharaModule } from './chara/chara.module'
 import { FileModule } from './file/file.module'
-import { TaskService } from './task/task.service'
 import { SceneModule } from './scene/scene.module'
 import { ProjectModule } from './project/project.module'
 import { WorldviewModule } from './worldview/worldview.module'
@@ -37,6 +36,6 @@ import { UtilsModule } from '@app/utils'
     ProjectModule,
   ],
   controllers: [AppController],
-  providers: [AppService, TaskService],
+  providers: [AppService],
 })
 export class AppModule {}
