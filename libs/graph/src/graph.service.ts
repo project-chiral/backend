@@ -166,7 +166,7 @@ export class GraphService {
     return plainToInstance(NodeEntity, query?.n)
   }
 
-  @Subscribe('entity_create', 'graph')
+  @Subscribe('graph', 'entity_create')
   protected async handleEntityCreate({
     type,
     ids,
@@ -181,7 +181,7 @@ export class GraphService {
     `.run()
   }
 
-  @Subscribe('entity_remove', 'graph')
+  @Subscribe('graph', 'entity_remove')
   protected async handleEntityRemove({ type, ids }: EntityRemoveMsg) {
     await this.cypherService.execute`
     match (n:${type})

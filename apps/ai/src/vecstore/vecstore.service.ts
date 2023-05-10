@@ -62,7 +62,7 @@ export class VecstoreService {
     return this.vecstore.delete(position, ids)
   }
 
-  @Subscribe('entity_create', 'ai_vecstore')
+  @Subscribe('ai_vecstore', 'entity_create')
   protected async handleEntityCreate({
     type,
     ids,
@@ -87,7 +87,7 @@ export class VecstoreService {
     )
   }
 
-  @Subscribe('entity_remove', 'ai_vecstore')
+  @Subscribe('ai_vecstore', 'entity_remove')
   protected async handleEntityRemove({ type, ids }: EntityRemoveMsg) {
     await this.deleteMany({ collection_name: type }, ids)
   }

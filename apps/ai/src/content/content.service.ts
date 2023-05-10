@@ -110,7 +110,7 @@ export class ContentService {
     )
   }
 
-  @Subscribe('entity_done', 'ai_content')
+  @Subscribe('ai_content', 'entity_done')
   protected async handleEntitiesDone({ type, ids, done }: EntityDoneMsg) {
     const contents = await this.getBatch({ type, ids })
     const partition_name = done ? PartitionEnum.done : PartitionEnum.undone
@@ -120,7 +120,7 @@ export class ContentService {
     )
   }
 
-  @Subscribe('entity_remove', 'ai_content')
+  @Subscribe('ai_content', 'entity_remove')
   protected async handleEntityRemove({ type, ids }: EntityRemoveMsg) {
     await Promise.all([
       this.vecstoreService.deleteMany({ collection_name: type }, ids),

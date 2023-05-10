@@ -5,6 +5,10 @@ import { ContentService } from '../content/content.service'
 import { BaseService } from '../base/base.service'
 import { QueryGeneratePrompt } from './prompt'
 import { OpenAI } from 'langchain/llms/openai'
+import { CacheService } from '@app/cache'
+import { EventIdsKey } from './const'
+import { Subscribe } from '@app/rmq/decorator'
+import { EntityCreateMsg, EntityRemoveMsg } from '@app/rmq/subscribe'
 
 @Injectable()
 export class QueryService {
@@ -13,20 +17,34 @@ export class QueryService {
   constructor(
     private readonly baseService: BaseService,
     private readonly prismaService: PrismaService,
-    private readonly contentService: ContentService
+    private readonly contentService: ContentService,
+    private readonly cache: CacheService
   ) {
     this.llm = new OpenAI({ modelName: 'gpt-3.5-turbo' })
   }
 
+  private async _getEventIds(projectId: number) {
+    const ids = await this.cache.get<number[]>(EventIdsKey({ projectId }))
+    if (!ids) {
+      const events = await this.prismaService.event.findMany({
+        where: { projectId },
+        select: { id: true },
+      })
+      const ids = events.map(({ id }) => id)
+      await this.cache.set(EventIdsKey({ projectId }), ids)
+      return ids
+    }
+
+    return ids
+  }
+
   private async _getRandomEventIds(projectId: number, n: number) {
-    const count = await this.prismaService.event.count({
-      where: { projectId },
-    })
-    n = Math.min(n, count)
+    const ids = await this._getEventIds(projectId)
+    const size = Math.min(n, ids.length)
 
     const result = new Set<number>()
-    while (result.size < n) {
-      result.add(Math.floor(Math.random() * count))
+    while (result.size < size) {
+      result.add(ids[Math.floor(Math.random() * ids.length)])
     }
 
     return [...result]
@@ -58,5 +76,11 @@ export class QueryService {
     )
 
     return result
+  }
+
+  @Subscribe('ai_query', 'entity_create', ['event'])
+  @Subscribe('ai_query', 'entity_remove', ['event'])
+  async handleEventChange({ projectId }: EntityCreateMsg | EntityRemoveMsg) {
+    await this.cache.del(EventIdsKey({ projectId }))
   }
 }

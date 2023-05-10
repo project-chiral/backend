@@ -18,6 +18,7 @@ export interface EntityUpdateMsg {
 export interface EntityDoneMsg {
   type: EntityType
   ids: number[]
+  projectId: number
   done: boolean
 }
 
@@ -27,4 +28,5 @@ export interface EntityDoneMsg {
 export interface EntityRemoveMsg {
   type: EntityType
   ids: number[]
+  projectId: number
 }

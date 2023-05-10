@@ -22,7 +22,7 @@ export class WorldviewService {
       },
     })
 
-    this.rmqService.publish('entity_create', {
+    this.rmqService.publish('entity_create', ['worldview'], {
       type: 'worldview',
       projectId,
       ids: [result.id],
@@ -53,7 +53,7 @@ export class WorldviewService {
       data: dto,
     })
 
-    this.rmqService.publish('entity_update', {
+    this.rmqService.publish('entity_update', ['worldview'], {
       type: 'worldview',
       projectId: result.projectId,
       ids: [id],
@@ -68,9 +68,10 @@ export class WorldviewService {
       data: { done },
     })
 
-    this.rmqService.publish('entity_done', {
+    this.rmqService.publish('entity_done', ['worldview'], {
       type: 'worldview',
       ids: [id],
+      projectId: result.projectId,
       done,
     })
 
@@ -97,9 +98,10 @@ export class WorldviewService {
       })
     }
 
-    this.rmqService.publish('entity_remove', {
+    this.rmqService.publish('entity_remove', ['worldview'], {
       type: 'worldview',
       ids: [id, ...subIds],
+      projectId: result.projectId,
     })
 
     return plainToInstance(WorldviewEntity, result)

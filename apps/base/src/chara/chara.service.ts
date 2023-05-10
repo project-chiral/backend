@@ -38,10 +38,10 @@ export class CharaService {
       },
     })
 
-    this.rmqService.publish('entity_create', {
+    this.rmqService.publish('entity_create', ['chara'], {
       type: 'chara',
-      projectId,
       ids: [chara.id],
+      projectId,
     })
 
     return plainToInstance(CharaEntity, chara)
@@ -53,7 +53,7 @@ export class CharaService {
       data: dto,
     })
 
-    this.rmqService.publish('entity_update', {
+    this.rmqService.publish('entity_update', ['chara'], {
       type: 'chara',
       projectId: chara.projectId,
       ids: [id],
@@ -68,9 +68,10 @@ export class CharaService {
       data: { done },
     })
 
-    this.rmqService.publish('entity_done', {
+    this.rmqService.publish('entity_done', ['chara'], {
       type: 'chara',
       ids: [id],
+      projectId: result.projectId,
       done,
     })
 
@@ -78,16 +79,17 @@ export class CharaService {
   }
 
   async remove(id: number) {
-    const chara = await this.prismaService.chara.delete({
+    const result = await this.prismaService.chara.delete({
       where: { id },
     })
 
-    this.rmqService.publish('entity_remove', {
+    this.rmqService.publish('entity_remove', ['chara'], {
       type: 'chara',
       ids: [id],
+      projectId: result.projectId,
     })
 
-    return plainToInstance(CharaEntity, chara)
+    return plainToInstance(CharaEntity, result)
   }
 
   async searchByName(name: string) {

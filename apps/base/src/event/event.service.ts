@@ -105,10 +105,10 @@ export class EventService {
       },
     })
 
-    this.rmqService.publish('entity_create', {
+    this.rmqService.publish('entity_create', ['event'], {
       type: 'event',
-      projectId,
       ids: [result.id],
+      projectId,
     })
 
     return plainToInstance(EventEntity, result)
@@ -120,10 +120,10 @@ export class EventService {
       data: { ...dto },
     })
 
-    this.rmqService.publish('entity_update', {
+    this.rmqService.publish('entity_update', ['event'], {
       type: 'event',
-      projectId: result.projectId,
       ids: [id],
+      projectId: result.projectId,
     })
 
     return plainToInstance(EventEntity, result)
@@ -135,9 +135,10 @@ export class EventService {
       data: { done },
     })
 
-    this.rmqService.publish('entity_done', {
+    this.rmqService.publish('entity_done', ['event'], {
       type: 'event',
       ids: [id],
+      projectId: result.projectId,
       done,
     })
 
@@ -161,9 +162,10 @@ export class EventService {
       })
     }
 
-    this.rmqService.publish('entity_remove', {
+    this.rmqService.publish('entity_remove', ['event'], {
       type: 'event',
       ids: [result.id, ...subIds],
+      projectId: result.projectId,
     })
 
     return plainToInstance(EventEntity, result)

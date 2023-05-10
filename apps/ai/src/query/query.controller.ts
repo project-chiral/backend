@@ -11,7 +11,7 @@ export class QueryController {
   ) {}
 
   @Get('query')
-  generateQuery(@Query() dto: GenerateQueriesDto) {
+  generate(@Query() dto: GenerateQueriesDto) {
     return this.queryService.generate(this.utils.getProjectId(), dto)
   }
 }
