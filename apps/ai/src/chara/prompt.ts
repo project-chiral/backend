@@ -26,6 +26,6 @@ For situations where no name can be recognized, return empty list:
 
 "this is a test" -> []
 
-I want you to only reply the array result and nothing else, do not write any explanations. All result should be valid JSON format.
+I want you to only reply the array result and nothing else, do not write any explanations. All result should be in valid JSON format.
  
 "${doc}" -> `

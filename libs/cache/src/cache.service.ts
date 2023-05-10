@@ -1,10 +1,12 @@
 import { Injectable } from '@nestjs/common'
 import { Redis } from 'ioredis'
 
+const EXPIRE = 1000 * 60 * 5
+
 @Injectable()
 export class CacheService extends Redis {
   constructor() {
-    super(process.env.REDIS_URL ?? '')
+    super(process.env.REDIS_URL ?? '', {})
   }
 
   async get<T = object>(key: string) {
@@ -17,5 +19,13 @@ export class CacheService extends Redis {
 
   async set<T = unknown>(key: string, value: T) {
     return super.set(key, JSON.stringify(value))
+  }
+
+  async setWithExpire<T = unknown>(
+    key: string,
+    value: T,
+    milli: number = EXPIRE
+  ) {
+    return super.set(key, JSON.stringify(value), 'PX', milli)
   }
 }

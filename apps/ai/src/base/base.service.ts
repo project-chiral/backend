@@ -24,7 +24,7 @@ export class BaseService {
         where: { projectId },
         select: { lang: true },
       })
-      await this.cache.set(LangKey({ projectId }), lang)
+      await this.cache.setWithExpire(LangKey({ projectId }), lang)
       return lang
     }
 
