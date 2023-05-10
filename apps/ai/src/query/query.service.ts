@@ -27,11 +27,15 @@ export class QueryService {
     const ids = await this.cache.get<number[]>(EventIdsKey({ projectId }))
     if (!ids) {
       const events = await this.prismaService.event.findMany({
-        where: { projectId },
+        where: { projectId, done: true },
         select: { id: true },
       })
       const ids = events.map(({ id }) => id)
-      await this.cache.set(EventIdsKey({ projectId }), ids)
+      await this.cache.setWithExpire(
+        EventIdsKey({ projectId }),
+        ids,
+        1000 * 60 * 60 * 24
+      )
       return ids
     }
 
@@ -79,8 +83,12 @@ export class QueryService {
   }
 
   @Subscribe('ai_query', 'entity_create', ['event'])
+  async handleEventCreate({ projectId }: EntityCreateMsg) {
+    await this.cache.del(EventIdsKey({ projectId }))
+  }
+
   @Subscribe('ai_query', 'entity_remove', ['event'])
-  async handleEventChange({ projectId }: EntityCreateMsg | EntityRemoveMsg) {
+  async handleEventRemove({ projectId }: EntityRemoveMsg) {
     await this.cache.del(EventIdsKey({ projectId }))
   }
 }
