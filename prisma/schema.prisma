@@ -75,10 +75,10 @@ model EventTodo {
 
 // ----------------------------------- 角色 & 场景 --------------------------------------
 
-model Character {
+model Chara {
   id Int @id @default(autoincrement())
 
-  name        String   @unique
+  name        String
   alias       String[]
   description String?
   avatar      String?
@@ -170,7 +170,7 @@ model Project {
   deleted DateTime?
 
   events     Event[]
-  characters Character[]
+  charas     Chara[]
   scenes     Scene[]
   worldviews Worldview[]
 
