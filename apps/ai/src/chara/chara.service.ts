@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from 'nestjs-prisma'
 import { CharaList } from './types'
-import { CharaListKey, UnresolvedCharasKey } from './const'
+import { CharaListKey, ResolvedCharasKey, UnresolvedCharasKey } from './const'
 import { UtilsService } from '@app/utils'
 import { Subscribe } from '@app/rmq/decorator'
 import { EntityUpdateMsg } from '@app/rmq/subscribe'
@@ -15,6 +15,7 @@ import levenshtein from 'js-levenshtein'
 import { Lang } from '../const'
 import { PARTICIPATED_IN } from '@app/graph/schema'
 import { plainToInstance } from 'class-transformer'
+import { CharaResolveEntity } from './entities/chara-resolve.entity'
 
 @Injectable()
 export class CharaService {
@@ -38,11 +39,8 @@ export class CharaService {
         where: { projectId },
         select: { id: true, name: true, alias: true },
       })
+      await this.cache.setWithExpire(CharaListKey({ projectId }), charas)
 
-      const key = CharaListKey({ projectId })
-
-      await this.cache.set(key, charas)
-      await this.cache.expire(key, 60 * 5)
       return charas
     }
 
@@ -75,6 +73,10 @@ export class CharaService {
         }
       }
 
+      // 忽略根本就不匹配的结果
+      if (result.score < 1e-6) {
+        continue
+      }
       options.push({
         id,
         name: targetName,
@@ -116,34 +118,56 @@ export class CharaService {
       this._handleResolved(eventId, resolved),
     ])
 
-    return { resolved, unresolved }
+    return plainToInstance(CharaResolveEntity, { resolved, unresolved })
   }
 
   private async _handleResolved(eventId: number, ids: number[]) {
     const projectId = this.utils.getProjectId()
 
-    await this.graphService.createRelations(
-      projectId,
-      ids.map((id) => ({
-        type: PARTICIPATED_IN,
-        from: id,
-        to: eventId,
-      }))
-    )
+    await Promise.all([
+      this.cache.setWithExpire(
+        ResolvedCharasKey({ eventId }),
+        ids,
+        1000 * 60 * 60 * 24
+      ),
+      this.graphService.createRelations(
+        projectId,
+        ids.map((id) => ({
+          type: PARTICIPATED_IN,
+          from: id,
+          to: eventId,
+        }))
+      ),
+    ])
   }
 
   private async _handleUnresolved(
     eventId: number,
     dtos: UnresolvedCharasDto[]
   ) {
-    await this.cache.set(UnresolvedCharasKey({ eventId }), dtos)
+    await this.cache.setWithExpire(
+      UnresolvedCharasKey({ eventId }),
+      dtos,
+      1000 * 60 * 60 * 24
+    )
   }
 
   async getResolved(eventId: number) {
-    return this.graphService.getRelation({
-      type: PARTICIPATED_IN,
-      to: eventId,
-    })
+    const ids = await this.cache.get<number[]>(ResolvedCharasKey({ eventId }))
+
+    if (!ids) {
+      const ids = (
+        await this.graphService.getRelation({
+          type: PARTICIPATED_IN,
+          to: eventId,
+        })
+      ).map((r) => +r.end)
+
+      await this.cache.setWithExpire(ResolvedCharasKey({ eventId }), ids)
+      return ids
+    }
+
+    return ids
   }
 
   async getUnresolved(eventId: number) {
@@ -151,6 +175,60 @@ export class CharaService {
       (await this.cache.get<object[]>(UnresolvedCharasKey({ eventId }))) ?? []
 
     return plainToInstance(UnresolvedCharasDto, resp)
+  }
+
+  async get(eventId: number) {
+    const [resolved, unresolved] = await Promise.all([
+      this.getResolved(eventId),
+      this.getUnresolved(eventId),
+    ])
+
+    return plainToInstance(CharaResolveEntity, { resolved, unresolved })
+  }
+
+  async addResolved(eventId: number, charaId: number) {
+    const projectId = this.utils.getProjectId()
+
+    const resolved = await this.getResolved(eventId)
+
+    await Promise.all([
+      this.cache.setWithExpire(
+        ResolvedCharasKey({ eventId }),
+        [...resolved, charaId],
+        1000 * 60 * 60 * 24
+      ),
+      this.graphService.createRelation(projectId, {
+        type: PARTICIPATED_IN,
+        from: charaId,
+        to: eventId,
+      }),
+    ])
+  }
+
+  async removeResolved(eventId: number, charaId: number) {
+    const resolved = await this.getResolved(eventId)
+
+    await Promise.all([
+      this.cache.setWithExpire(
+        ResolvedCharasKey({ eventId }),
+        resolved.filter((v) => v !== charaId),
+        1000 * 60 * 60 * 24
+      ),
+      this.graphService.removeRelation({
+        type: PARTICIPATED_IN,
+        from: charaId,
+        to: eventId,
+      }),
+    ])
+  }
+
+  async removeUnresolved(eventId: number, name: string) {
+    const unresolved = await this.getUnresolved(eventId)
+    await this.cache.setWithExpire(
+      UnresolvedCharasKey({ eventId }),
+      unresolved.filter((v) => v.name !== name),
+      1000 * 60 * 60 * 24
+    )
   }
 
   /**
