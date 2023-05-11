@@ -9,6 +9,7 @@ import { CacheService } from '@app/cache'
 import { EventIdsKey } from './const'
 import { Subscribe } from '@app/rmq/decorator'
 import { EntityCreateMsg, EntityRemoveMsg } from '@app/rmq/subscribe'
+import { DAY_MILLISECONDS } from '@app/utils'
 
 @Injectable()
 export class QueryService {
@@ -27,14 +28,14 @@ export class QueryService {
     const ids = await this.cache.get<number[]>(EventIdsKey({ projectId }))
     if (!ids) {
       const events = await this.prismaService.event.findMany({
-        where: { projectId, done: true },
+        where: { projectId },
         select: { id: true },
       })
       const ids = events.map(({ id }) => id)
       await this.cache.setWithExpire(
         EventIdsKey({ projectId }),
         ids,
-        1000 * 60 * 60 * 24
+        DAY_MILLISECONDS
       )
       return ids
     }
@@ -68,6 +69,7 @@ export class QueryService {
 
   async generate(projectId: number, { n }: GenerateQueriesDto) {
     const ids = await this._getRandomEventIds(projectId, n)
+
     const contents = (
       await this.contentService.getBatch({
         type: 'event',

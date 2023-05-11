@@ -15,6 +15,7 @@ import { Lang } from '../const'
 import { PARTICIPATED_IN } from '@app/graph/schema'
 import { plainToInstance } from 'class-transformer'
 import { CharaResolveEntity } from './entities/chara-resolve.entity'
+import { DAY_MILLISECONDS } from '@app/utils'
 
 @Injectable()
 export class CharaService {
@@ -128,7 +129,7 @@ export class CharaService {
       this.cache.setWithExpire(
         ResolvedCharasKey({ eventId }),
         ids,
-        1000 * 60 * 60 * 24
+        DAY_MILLISECONDS
       ),
       this.graphService.createRelations(
         ids.map((id) => ({
@@ -147,7 +148,7 @@ export class CharaService {
     await this.cache.setWithExpire(
       UnresolvedCharasKey({ eventId }),
       dtos,
-      1000 * 60 * 60 * 24
+      DAY_MILLISECONDS
     )
   }
 
@@ -192,7 +193,7 @@ export class CharaService {
       this.cache.setWithExpire(
         ResolvedCharasKey({ eventId }),
         [...resolved, charaId],
-        1000 * 60 * 60 * 24
+        DAY_MILLISECONDS
       ),
       this.graphService.createRelation({
         type: PARTICIPATED_IN,
@@ -209,7 +210,7 @@ export class CharaService {
       this.cache.setWithExpire(
         ResolvedCharasKey({ eventId }),
         resolved.filter((v) => v !== charaId),
-        1000 * 60 * 60 * 24
+        DAY_MILLISECONDS
       ),
       this.graphService.removeRelation({
         type: PARTICIPATED_IN,
@@ -224,7 +225,7 @@ export class CharaService {
     await this.cache.setWithExpire(
       UnresolvedCharasKey({ eventId }),
       unresolved.filter((v) => v.name !== name),
-      1000 * 60 * 60 * 24
+      DAY_MILLISECONDS
     )
   }
 

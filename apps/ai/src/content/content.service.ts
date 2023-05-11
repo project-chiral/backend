@@ -15,6 +15,7 @@ import { CacheService } from '@app/cache'
 import { SearchContentQueryDto } from './dto/search-content-query.dto'
 import { PartitionEnum } from '../vecstore/schema'
 import { PrismaService } from 'nestjs-prisma'
+import { DAY_MILLISECONDS } from '@app/utils'
 
 @Injectable()
 export class ContentService {
@@ -106,7 +107,7 @@ export class ContentService {
           ),
           this.cache.del(key),
         ])
-      }, 1000 * 60 * 60 * 24)
+      }, DAY_MILLISECONDS)
     )
   }
 
