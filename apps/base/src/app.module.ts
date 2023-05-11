@@ -15,6 +15,7 @@ import { RequestContextModule } from 'nestjs-request-context'
 import { GraphModule } from './graph/graph.module'
 import { CacheModule } from '@app/cache'
 import { UtilsModule } from '@app/utils'
+import { ServeStaticModule } from '@nestjs/serve-static'
 
 @Module({
   imports: [
@@ -28,6 +29,9 @@ import { UtilsModule } from '@app/utils'
     }),
     RequestContextModule,
     HttpModule,
+    ServeStaticModule.forRoot({
+      rootPath: process.env.FILE_PATH,
+    }),
     EventModule,
     CharaModule,
     SceneModule,
