@@ -8,33 +8,38 @@ import { OpenAIChat } from 'langchain/llms/openai'
 import {
   ChatPromptTemplate,
   SystemMessagePromptTemplate,
-  HumanMessagePromptTemplate,
 } from 'langchain/prompts'
 
 @Injectable()
 export class AgentService {
   executor: AgentExecutor
+  model: OpenAIChat
 
   constructor(private readonly semanticService: SemanticService) {
     const tools: Tool[] = [semanticService]
-    const chat = new OpenAIChat()
+    this.model = new OpenAIChat({ temperature: 0.4, verbose: true })
 
     const prompt = ZeroShotAgent.createPrompt(tools, {
-      prefix: `Answer the following questions as best you can, but speaking as a pirate might speak. You have access to the following tools:`,
-      suffix: `Begin! Remember to speak as a pirate when giving your final answer. Use lots of "Args"`,
+      suffix: `The final answer should include supporting evidence and be in the following format:
+    "Final Answer: 根据 [@<id>] 和 [@<id>] 提供的信息, 我认为..."
+    Where [@<id>] are the id of the events you want to use as evidence.
+
+    The final answer should be in Chinese Simpified.
+
+    Begin!
+
+    Question: {input}
+    Thought: {agent_scratchpad}`,
+      inputVariables: ['input', 'agent_scratchpad'],
     })
 
     const chatPrompt = ChatPromptTemplate.fromPromptMessages([
       new SystemMessagePromptTemplate(prompt),
-      HumanMessagePromptTemplate.fromTemplate(`{input}
-
-This was your previous work (but I haven't seen any of it! I only see what you return as final answer):
-{agent_scratchpad}`),
     ])
 
     const llmChain = new LLMChain({
       prompt: chatPrompt,
-      llm: chat,
+      llm: this.model,
     })
 
     const agent = new ZeroShotAgent({
@@ -44,11 +49,14 @@ This was your previous work (but I haven't seen any of it! I only see what you r
     this.executor = AgentExecutor.fromAgentAndTools({
       agent,
       tools,
+      returnIntermediateSteps: true,
     })
   }
 
   async baseQA(query: string) {
-    // const resp = await this.executor.run(query)
-    return ''
+    const resp = await this.executor.call({
+      input: query,
+    })
+    return resp.output as string
   }
 }

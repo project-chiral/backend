@@ -25,6 +25,7 @@
     "test:e2e": "jest --config ./apps/base/test/jest-e2e.json"
   },
   "dependencies": {
+    "@casl/ability": "^6.5.0",
     "@nestjs-plus/rabbitmq": "^1.4.4",
     "@nestjs/axios": "^2.0.0",
     "@nestjs/common": "^9.2.0",
@@ -32,6 +33,7 @@
     "@nestjs/core": "^9.2.0",
     "@nestjs/platform-express": "^9.0.0",
     "@nestjs/schedule": "^2.2.1",
+    "@nestjs/serve-static": "^3.0.1",
     "@nestjs/swagger": "^6.3.0",
     "@prisma/client": "^4.14.0",
     "@zilliz/milvus2-sdk-node": "^2.2.7",

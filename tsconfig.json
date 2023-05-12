@@ -45,8 +45,14 @@
         "libs/graph/src/*"
       ],
       "@app/cache": [
-        "libs/cache/src" 
+        "libs/cache/src"
       ],
+      "@app/auth": [
+        "libs/auth/src"
+      ],
+      "@app/auth/*": [
+        "libs/auth/src/*"
+      ]
     }
   }
 }

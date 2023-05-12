@@ -16,6 +16,7 @@ import { GraphModule } from './graph/graph.module'
 import { CacheModule } from '@app/cache'
 import { UtilsModule } from '@app/utils'
 import { ServeStaticModule } from '@nestjs/serve-static'
+import { CaslModule } from './casl/casl.module';
 
 @Module({
   imports: [
@@ -38,6 +39,7 @@ import { ServeStaticModule } from '@nestjs/serve-static'
     FileModule,
     WorldviewModule,
     ProjectModule,
+    CaslModule,
   ],
   controllers: [AppController],
   providers: [AppService],

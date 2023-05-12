@@ -23,7 +23,7 @@ export class VecstoreService {
   }
 
   async simSearch(type: EntityType, query: string, k = 10) {
-    const vec = await this.embeddings.embedDocuments([query])[0]
+    const vec = (await this.embeddings.embedDocuments([query]))[0]
     return this.search(type, vec, k)
   }
 
