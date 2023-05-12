@@ -1,0 +1,29 @@
+version: '3.8'
+
+env_file: .env
+
+services:
+  app:
+    build: .
+    container_name: node
+    restart: always
+    ports:
+      - 3000:3000
+    depends_on:
+      - db
+      - neo4j
+      - redis
+
+  db:
+   image: postgres:latest
+   container_name: postgresql
+   environment:
+     POSTGRES_USER: postgres_user
+     POSTGRES_PASSWORD: example_password
+
+  neo4j:
+   image: neo4j:latest
+   container_name: neo4j_db 
+   
+  redis :
+   image :redis 
