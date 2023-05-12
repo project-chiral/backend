@@ -49,7 +49,6 @@ export class AgentService {
     this.executor = AgentExecutor.fromAgentAndTools({
       agent,
       tools,
-      returnIntermediateSteps: true,
     })
   }
 

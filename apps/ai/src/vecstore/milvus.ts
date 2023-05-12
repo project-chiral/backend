@@ -11,6 +11,7 @@ import {
   VECTOR_DIM,
   IndexCreateParams,
   Fields,
+  SearchParams,
 } from './schema'
 
 export class Milvus {
@@ -132,7 +133,7 @@ export class Milvus {
 
   async search(
     position: PositionType,
-    query: number[],
+    { query, ...filter }: SearchParams,
     k: number
   ): Promise<[Doc, number][]> {
     await this.loadCollection(position)
@@ -149,6 +150,7 @@ export class Milvus {
       },
       vector_type: DataType.FloatVector,
       vectors: [query],
+      filter: this._filterExpr(filter),
     })
 
     if (searchResp.status.error_code !== ErrorCode.SUCCESS) {

@@ -9,6 +9,18 @@ export interface QueryParams {
   projectId?: number
 }
 
+export interface SimSearchParams {
+  query: string
+  projectId: number
+  id?: number[]
+}
+
+export interface SearchParams {
+  query: number[]
+  projectId: number
+  id?: number[]
+}
+
 export enum PartitionEnum {
   done = 'done',
   undone = 'undone',

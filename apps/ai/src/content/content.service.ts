@@ -14,7 +14,6 @@ import { plainToInstance } from 'class-transformer'
 import { CacheService } from '@app/cache'
 import { SearchContentQueryDto } from './dto/search-content-query.dto'
 import { PartitionEnum } from '../vecstore/schema'
-import { PrismaService } from 'nestjs-prisma'
 import { DAY_MILLISECONDS } from '@app/utils'
 
 @Injectable()
@@ -22,7 +21,6 @@ export class ContentService {
   constructor(
     private readonly vecstoreService: VecstoreService,
     private readonly schedule: SchedulerRegistry,
-    private readonly prismaService: PrismaService,
     private cache: CacheService
   ) {}
 
@@ -61,8 +59,12 @@ export class ContentService {
     return Promise.all(ids.map((id) => this.get({ type, id })))
   }
 
-  async search({ type, query, k }: SearchContentQueryDto) {
-    const result = await this.vecstoreService.simSearch(type, query, k)
+  async search(projectId: number, { type, query, k }: SearchContentQueryDto) {
+    const result = await this.vecstoreService.simSearch(
+      type,
+      { query, projectId },
+      k
+    )
 
     return result.map(
       ([doc]) =>

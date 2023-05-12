@@ -7,11 +7,15 @@ import {
 } from './dto/get-content-query.dto'
 import { ApiTags } from '@nestjs/swagger'
 import { SearchContentQueryDto } from './dto/search-content-query.dto'
+import { UtilsService } from '@app/utils'
 
 @ApiTags('content')
 @Controller('content')
 export class ContentController {
-  constructor(private readonly contentService: ContentService) {}
+  constructor(
+    private readonly contentService: ContentService,
+    private readonly utils: UtilsService
+  ) {}
 
   @Get()
   get(@Query() query: GetContentQueryDto) {
@@ -25,7 +29,8 @@ export class ContentController {
 
   @Get('search')
   search(@Query() query: SearchContentQueryDto) {
-    return this.contentService.search(query)
+    const projectId = this.utils.getProjectId()
+    return this.contentService.search(projectId, query)
   }
 
   @Put()
