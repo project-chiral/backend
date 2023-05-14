@@ -28,22 +28,13 @@
         "tsConfigPath": "apps/base/tsconfig.app.json"
       }
     },
-    "graph": {
+    "ai": {
       "type": "application",
-      "root": "apps/graph",
+      "root": "apps/ai",
       "entryFile": "main",
-      "sourceRoot": "apps/graph/src",
+      "sourceRoot": "apps/ai/src",
       "compilerOptions": {
-        "tsConfigPath": "apps/graph/tsconfig.app.json"
-      }
-    },
-    "qa": {
-      "type": "application",
-      "root": "apps/qa",
-      "entryFile": "main",
-      "sourceRoot": "apps/qa/src",
-      "compilerOptions": {
-        "tsConfigPath": "apps/qa/tsconfig.app.json"
+        "tsConfigPath": "apps/ai/tsconfig.app.json"
       }
     },
     "env": {
@@ -57,6 +48,33 @@
       "root": "libs/rmq",
       "entryFile": "index",
       "sourceRoot": "libs/rmq"
+    },
+    "utils": {
+      "type": "library",
+      "root": "libs/utils",
+      "entryFile": "index",
+      "sourceRoot": "libs/utils/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/utils/tsconfig.lib.json"
+      }
+    },
+    "graph": {
+      "type": "library",
+      "root": "libs/graph",
+      "entryFile": "index",
+      "sourceRoot": "libs/graph/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/graph/tsconfig.lib.json"
+      }
+    },
+    "cache": {
+      "type": "library",
+      "root": "libs/cache",
+      "entryFile": "index",
+      "sourceRoot": "libs/cache/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/cache/tsconfig.lib.json"
+      }
     }
   }
 }

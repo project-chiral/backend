@@ -2,63 +2,98 @@ import { Injectable } from '@nestjs/common'
 import type { CreateCharaDto } from './dto/create-chara.dto'
 import type { UpdateCharaDto } from './dto/update-chara.dto'
 import { PrismaService } from 'nestjs-prisma'
-import { getProjectId } from '../utils/get-header'
 import { plainToInstance } from 'class-transformer'
 import { CharaEntity } from './entities/chara.entity'
+import { ToggleDoneDto } from '../dto/toggle-done.dto'
+import { RmqService } from '@app/rmq/rmq.service'
 
 @Injectable()
 export class CharaService {
-  constructor(private readonly prismaService: PrismaService) {}
+  constructor(
+    private readonly prismaService: PrismaService,
+    private readonly rmqService: RmqService
+  ) {}
 
-  async create(dto: CreateCharaDto) {
-    const projectId = getProjectId()
-    const chara = await this.prismaService.character.create({
-      data: {
-        ...dto,
-        projectId,
-      },
+  async get(id: number) {
+    const chara = await this.prismaService.chara.findUniqueOrThrow({
+      where: { id },
     })
 
     return plainToInstance(CharaEntity, chara)
   }
 
-  async findAll() {
-    const projectId = getProjectId()
-
-    const charas = await this.prismaService.character.findMany({
+  async getAll(projectId: number) {
+    const charas = await this.prismaService.chara.findMany({
       where: { projectId },
     })
 
     return charas.map((chara) => plainToInstance(CharaEntity, chara))
   }
 
-  async findOne(id: number) {
-    const chara = await this.prismaService.character.findUniqueOrThrow({
-      where: { id },
+  async create(projectId: number, dto: CreateCharaDto) {
+    const chara = await this.prismaService.chara.create({
+      data: {
+        ...dto,
+        projectId,
+      },
+    })
+
+    this.rmqService.publish('entity_create', ['chara'], {
+      type: 'chara',
+      ids: [chara.id],
+      projectId,
     })
 
     return plainToInstance(CharaEntity, chara)
   }
 
   async update(id: number, dto: UpdateCharaDto) {
-    const chara = await this.prismaService.character.update({
+    const chara = await this.prismaService.chara.update({
       where: { id },
       data: dto,
     })
 
-    return plainToInstance(CharaEntity, chara)
-  }
-
-  async remove(id: number) {
-    const chara = await this.prismaService.character.delete({
-      where: { id },
+    this.rmqService.publish('entity_update', ['chara'], {
+      type: 'chara',
+      projectId: chara.projectId,
+      ids: [id],
     })
 
     return plainToInstance(CharaEntity, chara)
   }
 
+  async toggleDone(id: number, { done }: ToggleDoneDto) {
+    const result = await this.prismaService.chara.update({
+      where: { id },
+      data: { done },
+    })
+
+    this.rmqService.publish('entity_done', ['chara'], {
+      type: 'chara',
+      ids: [id],
+      projectId: result.projectId,
+      done,
+    })
+
+    return plainToInstance(CharaEntity, result)
+  }
+
+  async remove(id: number) {
+    const result = await this.prismaService.chara.delete({
+      where: { id },
+    })
+
+    this.rmqService.publish('entity_remove', ['chara'], {
+      type: 'chara',
+      ids: [id],
+      projectId: result.projectId,
+    })
+
+    return plainToInstance(CharaEntity, result)
+  }
+
   async searchByName(name: string) {
-    const charas = await this.prismaService.character.findMany({
+    const charas = await this.prismaService.chara.findMany({
       where: {
         name: { contains: name },
       },

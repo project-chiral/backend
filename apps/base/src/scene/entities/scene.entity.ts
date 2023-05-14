@@ -8,5 +8,7 @@ export class SceneEntity implements Scene {
   deleted: Date | null
   superId: number | null
 
+  done: boolean
+
   projectId: number
 }

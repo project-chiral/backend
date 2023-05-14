@@ -5,11 +5,15 @@ import { UpdateProjectDto } from './dto/update-project.dto'
 import { UpdateSettingsDto } from './dto/update-settings.dto'
 import { UpdateWorkspaceDto } from './dto/update-workspace.dto'
 import { ProjectService } from './project.service'
+import { UtilsService } from '@app/utils'
 
 @ApiTags('project')
 @Controller('project')
 export class ProjectController {
-  constructor(private readonly projectService: ProjectService) {}
+  constructor(
+    private readonly projectService: ProjectService,
+    private readonly utils: UtilsService
+  ) {}
 
   // --------------------------------- project --------------------------------
 
@@ -18,7 +22,7 @@ export class ProjectController {
    */
   @Post()
   async create(@Body() dto: CreateProjectDto) {
-    return this.projectService.create(dto)
+    return this.projectService.create(this.utils.getUserId(), dto)
   }
 
   /**
@@ -26,7 +30,7 @@ export class ProjectController {
    */
   @Get()
   async get() {
-    return this.projectService.get()
+    return this.projectService.get(this.utils.getProjectId())
   }
 
   /**
@@ -34,7 +38,7 @@ export class ProjectController {
    */
   @Put()
   async update(@Body() dto: UpdateProjectDto) {
-    return this.projectService.update(dto)
+    return this.projectService.update(this.utils.getProjectId(), dto)
   }
 
   /**
@@ -42,7 +46,7 @@ export class ProjectController {
    */
   @Delete()
   async remove() {
-    return this.projectService.remove()
+    return this.projectService.remove(this.utils.getProjectId())
   }
 
   // -------------------------------- workspace -------------------------------
@@ -52,7 +56,7 @@ export class ProjectController {
    */
   @Get('workspace')
   async getWorkspace() {
-    return this.projectService.getWorkspace()
+    return this.projectService.getWorkspace(this.utils.getProjectId())
   }
 
   /**
@@ -60,7 +64,7 @@ export class ProjectController {
    */
   @Put('workspace')
   async updateWorkspace(@Body() dto: UpdateWorkspaceDto) {
-    return this.projectService.updateWorkspace(dto)
+    return this.projectService.updateWorkspace(this.utils.getProjectId(), dto)
   }
 
   // -------------------------------- settings --------------------------------
@@ -70,7 +74,7 @@ export class ProjectController {
    */
   @Get('settings')
   async getSettings() {
-    return this.projectService.getSettings()
+    return this.projectService.getSettings(this.utils.getProjectId())
   }
 
   /**
@@ -78,6 +82,6 @@ export class ProjectController {
    */
   @Put('settings')
   async updateSettings(@Body() dto: UpdateSettingsDto) {
-    return this.projectService.updateSettings(dto)
+    return this.projectService.updateSettings(this.utils.getProjectId(), dto)
   }
 }

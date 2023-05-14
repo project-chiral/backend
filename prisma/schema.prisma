@@ -33,6 +33,7 @@ model Event {
   id Int @id @default(autoincrement())
 
   serial Int
+  path   String @default("")
 
   name        String
   description String?
@@ -47,33 +48,18 @@ model Event {
   end   DateTime
 
   color String
+  cover String?
 
   type EventType @default(ATOM)
 
-  content   EventContent? @relation()
-  contentId Int?
-  todos     EventTodo[]
+  todos EventTodo[]
 
   done Boolean @default(false)
-
-  unresolved Json @default("[]")
 
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId Int
 
   @@unique([serial, projectId])
-}
-
-model EventContent {
-  id Int @id @default(autoincrement())
-
-  updatedAt DateTime @updatedAt
-
-  cover   String?
-  content String  @default("")
-
-  event   Event @relation(fields: [eventId], references: [id], onDelete: Cascade)
-  eventId Int   @unique
 }
 
 model EventTodo {
@@ -89,10 +75,10 @@ model EventTodo {
 
 // ----------------------------------- 角色 & 场景 --------------------------------------
 
-model Character {
+model Chara {
   id Int @id @default(autoincrement())
 
-  name        String   @unique
+  name        String
   alias       String[]
   description String?
   avatar      String?
@@ -103,6 +89,8 @@ model Character {
   unit  Int?
   start DateTime?
   end   DateTime?
+
+  done Boolean @default(false)
 
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId Int
@@ -119,6 +107,8 @@ model Scene {
 
   deleted DateTime?
 
+  done Boolean @default(false)
+
   project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId Int
 }
@@ -126,29 +116,20 @@ model Scene {
 // ----------------------------------- 世界观 -------------------------------------
 
 model Worldview {
-  id   Int    @id @default(autoincrement())
-  path String
+  id Int @id @default(autoincrement())
+
+  path String @default("")
 
   name String
 
   deleted DateTime?
 
-  content   WorldviewContent? @relation()
-  contentId Int?
-  project   Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  cover String?
+
+  done Boolean @default(false)
+
+  project   Project @relation(fields: [projectId], references: [id], onDelete: Cascade)
   projectId Int
-}
-
-model WorldviewContent {
-  id Int @id @default(autoincrement())
-
-  updatedAt DateTime @updatedAt
-
-  cover   String?
-  content String  @default("")
-
-  worldview   Worldview @relation(fields: [worldviewId], references: [id], onDelete: Cascade)
-  worldviewId Int       @unique
 }
 
 // ----------------------------------- 项目 --------------------------------------
@@ -189,7 +170,7 @@ model Project {
   deleted DateTime?
 
   events     Event[]
-  characters Character[]
+  charas     Chara[]
   scenes     Scene[]
   worldviews Worldview[]
 

@@ -6,6 +6,7 @@ import {
   IsNotEmpty,
   IsOptional,
   IsString,
+  IsUrl,
   Max,
   Min,
 } from 'class-validator'
@@ -17,7 +18,11 @@ export class CreateEventDto {
 
   @IsString()
   @IsOptional()
-  description: string | null
+  path?: string
+
+  @IsString()
+  @IsOptional()
+  description?: string
 
   @IsHexColor()
   color: string
@@ -35,4 +40,8 @@ export class CreateEventDto {
   @IsDate()
   @Type(() => Date)
   end: Date
+
+  @IsUrl()
+  @IsOptional()
+  cover?: string
 }

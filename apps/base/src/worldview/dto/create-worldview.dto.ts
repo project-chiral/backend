@@ -1,3 +1,4 @@
+import { Type } from 'class-transformer'
 import { IsInt, IsOptional, IsString } from 'class-validator'
 
 export class CreateWorldviewDto {
@@ -13,5 +14,6 @@ export class CreateWorldviewDto {
 
   @IsInt()
   @IsOptional()
+  @Type(() => Number)
   supId?: number
 }

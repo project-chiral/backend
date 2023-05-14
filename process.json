@@ -9,32 +9,9 @@
             "maxRestarts": 3
         },
         {
-            "name": "graph",
+            "name": "ai",
             "cwd": "dist/apps",
-            "script": "graph/main.js",
-            "autorestart": true,
-            "maxRestarts": 3
-        },
-        {
-            "name": "generate",
-            "cwd": "dist/apps",
-            "script": "generate/main.js",
-            "autorestart": true,
-            "maxRestarts": 3
-        },
-        {
-            "name": "qa",
-            "cwd": "dist/apps",
-            "script": "qa/main.js",
-            "autorestart": true,
-            "maxRestarts": 3
-        },
-        {
-            "name": "qa_worker",
-            "cwd": "apps/qa-worker",
-            "interpreter": ".venv/bin/python",
-            "script": "worker/main.py",
-            "instances": 2,
+            "script": "ai/main.js",
             "autorestart": true,
             "maxRestarts": 3
         }

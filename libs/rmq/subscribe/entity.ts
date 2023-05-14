@@ -1,10 +1,32 @@
+import { EntityType } from '../types'
+
 export interface EntityCreateMsg {
-  type: 'EVENT' | 'CHARA' | 'SCENE'
+  type: EntityType
   ids: number[]
   projectId: number
 }
 
-export interface EntityRemoveMsg {
-  type: 'EVENT' | 'CHARA' | 'SCENE'
+export interface EntityUpdateMsg {
+  type: EntityType
   ids: number[]
+  projectId: number
+}
+
+/**
+ * 实体done状态变化消息
+ */
+export interface EntityDoneMsg {
+  type: EntityType
+  ids: number[]
+  projectId: number
+  done: boolean
+}
+
+/**
+ * 实体移除消息
+ */
+export interface EntityRemoveMsg {
+  type: EntityType
+  ids: number[]
+  projectId: number
 }
