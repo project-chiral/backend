@@ -75,6 +75,8 @@ export class VecstoreService {
     ids,
     projectId,
   }: EntityCreateMsg) {
+    console.log(type, ids, 'create')
+
     this.createMany(
       {
         collection_name: type,
@@ -87,6 +89,7 @@ export class VecstoreService {
               id,
               projectId,
               updateAt: new Date(),
+              desc: '',
             },
             pageContent: ' ',
           })
@@ -96,6 +99,7 @@ export class VecstoreService {
 
   @Subscribe('ai_vecstore', 'entity_remove')
   protected async handleEntityRemove({ type, ids }: EntityRemoveMsg) {
+    console.log(type, ids, 'remove')
     await this.deleteMany({ collection_name: type }, ids)
   }
 }

@@ -12,3 +12,11 @@ export enum EntityEnum {
   scene = 'scene',
   worldview = 'worldview',
 }
+
+export type ContentType = 'event' | 'chara' | 'scene' | 'worldview'
+export enum ContentEnum {
+  event = 'event',
+  chara = 'chara',
+  scene = 'scene',
+  worldview = 'worldview',
+}

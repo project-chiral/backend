@@ -1,25 +1,12 @@
-import { ApiProperty } from '@nestjs/swagger'
+import { EntityType } from '@app/rmq/types'
 import { Type } from 'class-transformer'
-import type { Node } from 'cypher-query-builder'
-import type { NodeType } from '../schema'
-import { NodeEnum } from '../schema'
 
-export class NodeProperty {
+export class NodeEntity {
+  type: EntityType
+
+  @Type(() => Number)
   id: number
+
+  @Type(() => Number)
   projectId: number
-  name: string
-}
-
-export class NodeEntity implements Node<NodeProperty> {
-  identity: string
-
-  @Type(() => String)
-  @ApiProperty({
-    isArray: true,
-    enum: NodeEnum,
-  })
-  labels: NodeType[]
-
-  @Type(() => NodeProperty)
-  properties: NodeProperty
 }

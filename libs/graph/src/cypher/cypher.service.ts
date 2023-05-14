@@ -10,11 +10,8 @@ const removeUndefined = (data: Record<string, any>) =>
 
 const format = (value: any) => {
   if (typeof value === 'object') {
-    if (Array.isArray(value)) {
-      return util.inspect(value)
-    } else {
-      return util.inspect(removeUndefined(value))
-    }
+    value = Array.isArray(value) ? value : removeUndefined(value)
+    return util.inspect(value)
   } else {
     return `${value}`
   }

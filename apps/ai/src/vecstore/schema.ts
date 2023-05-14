@@ -35,6 +35,7 @@ export interface DocMetadata {
   id: number
   projectId: number
   updateAt: Date
+  desc: string
 }
 
 export type Schema = DocMetadata & {
@@ -58,6 +59,11 @@ export const Fields: FieldType[] = [
     name: 'doc',
     data_type: DataType.VarChar,
     max_length: 4096,
+  },
+  {
+    name: 'desc',
+    data_type: DataType.VarChar,
+    max_length: 2048,
   },
   {
     name: 'updateAt',

@@ -1,29 +1,229 @@
-version: '3.8'
-
-env_file: .env
+version: "3"
 
 services:
   app:
     build: .
-    container_name: node
+    container_name: app
     restart: always
-    ports:
-      - 3000:3000
     depends_on:
       - db
       - neo4j
       - redis
+      - rmq
+      - milvus
+    networks:
+      chiral:
+
 
   db:
-   image: postgres:latest
-   container_name: postgresql
-   environment:
-     POSTGRES_USER: postgres_user
-     POSTGRES_PASSWORD: example_password
+    image: postgres:14.8-alpine
+    container_name: db
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db:/var/lib/postgresql/data
+    networks:
+      chiral:
+
 
   neo4j:
-   image: neo4j:latest
-   container_name: neo4j_db 
-   
-  redis :
-   image :redis 
+    image: neo4j:latest
+    container_name: neo4j
+    restart: always
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - ./config/neo4j_conf/neo4j.conf:/conf/neo4j.conf
+      - neo4j/data:/var/lib/neo4j/data
+      - neo4j/logs:/var/lib/neo4j/logs
+      - neo4j/conf:/var/lib/neo4j/conf
+      - neo4j/import:/var/lib/neo4j/import
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider localhost:7474 || exit 1"
+        ]
+    networks:
+      chiral:
+
+
+  redis:
+    image: redis:latest
+    container_name: redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: [ "redis-server", "/etc/redis/redis.conf" ]
+    volumes:
+      - ./config/redis_conf/redis.conf:/etc/redis/redis.conf
+      - redis:/data
+    networks:
+      chiral:
+
+
+  rmq:
+    image: rabbitmq:3.12-management-alpine
+    container_name: rmq
+    restart: always
+    ports:
+      - "15672:15672"
+      - "5672:5672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=$RMQ_USERNAME
+      - RABBITMQ_DEFAULT_PASS=$RMQ_PASSWORD
+    volumes:
+      - rmq:/var/lib/rabbitmq
+    networks:
+      chiral:
+
+
+  milvus_etcd:
+    container_name: milvus-etcd
+    image: quay.io/coreos/etcd:v3.5.5
+    environment:
+      - ETCD_AUTO_COMPACTION_MODE=revision
+      - ETCD_AUTO_COMPACTION_RETENTION=1000
+      - ETCD_QUOTA_BACKEND_BYTES=4294967296
+      - ETCD_SNAPSHOT_COUNT=50000
+    volumes:
+      - milvus/etcd:/etcd
+    command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
+  networks:
+    chiral:
+
+
+  milvus_minio:
+    container_name: milvus-minio
+    image: minio/minio:RELEASE.2022-03-17T06-34-49Z
+    environment:
+      MINIO_ACCESS_KEY: minioadmin
+      MINIO_SECRET_KEY: minioadmin
+    volumes:
+      - milvus/minio:/minio_data
+    command: minio server /minio_data
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "curl",
+          "-f",
+          "http://localhost:9000/minio/health/live"
+        ]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      chiral:
+
+
+  milvus_standalone:
+    container_name: milvus
+    image: milvusdb/milvus:v2.2.8
+    command: [ "milvus", "run", "standalone" ]
+    environment:
+      ETCD_ENDPOINTS: etcd:2379
+      MINIO_ADDRESS: minio:9000
+    volumes:
+      - milvus/milvus:/var/lib/milvus
+    ports:
+      - "19530:19530"
+      - "9091:9091"
+    depends_on:
+      - "milvus_etcd"
+      - "milvus_minio"
+    networks:
+      chiral:
+
+
+  apisix-dashboard:
+    image: apache/apisix-dashboard:3.0.1-alpine
+    restart: always
+    volumes:
+      - ./config/dashboard_conf/conf.yaml:/usr/local/apisix-dashboard/conf/conf.yaml
+    ports:
+      - "9000:9000"
+    networks:
+      chiral:
+
+
+  apisix:
+    image: apache/apisix:${APISIX_IMAGE_TAG:-3.3.0-debian}
+    restart: always
+    volumes:
+      - ./config/apisix_conf/config.yaml:/usr/local/apisix/conf/config.yaml:ro
+    depends_on:
+      - etcd
+    ##network_mode: host
+    ports:
+      - "9180:9180/tcp"
+      - "9080:9080/tcp"
+      - "9091:9091/tcp"
+      - "9443:9443/tcp"
+      - "9092:9092/tcp"
+    networks:
+      chiral:
+
+
+  etcd:
+    image: bitnami/etcd:3.4.15
+    restart: always
+    volumes:
+      - etcd_data:/bitnami/etcd
+    environment:
+      ETCD_ENABLE_V2: "true"
+      ALLOW_NONE_AUTHENTICATION: "yes"
+      ETCD_ADVERTISE_CLIENT_URLS: "http://etcd:2379"
+      ETCD_LISTEN_CLIENT_URLS: "http://0.0.0.0:2379"
+    ports:
+      - "2379:2379/tcp"
+    networks:
+      chiral:
+
+
+  prometheus:
+    image: prom/prometheus:v2.25.0
+    restart: always
+    volumes:
+      - ./config/prometheus_conf/prometheus.yml:/etc/prometheus/prometheus.yml
+    ports:
+      - "9090:9090"
+    networks:
+      chiral:
+
+
+  grafana:
+    image: grafana/grafana:7.3.7
+    restart: always
+    ports:
+      - "3000:3000"
+    volumes:
+      - "./config/grafana_conf/provisioning:/etc/grafana/provisioning"
+      - "./config/grafana_conf/dashboards:/var/lib/grafana/dashboards"
+      - "./config/grafana_conf/config/grafana.ini:/etc/grafana/grafana.ini"
+    networks:
+      chiral:
+
+
+networks:
+  chiral:
+    driver: bridge
+
+volumes:
+  db:
+    driver: local
+  redis:
+    driver: local
+  rmq:
+    driver: local
+  neo4j:
+    driver: local
+  milvus:
+    driver: local
+  etcd_data:
+    driver: local

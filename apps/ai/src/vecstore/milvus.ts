@@ -158,12 +158,13 @@ export class Milvus {
     }
 
     const results: [Doc, number][] = searchResp.results.map(
-      ({ doc, id, projectId, updateAt, score }) => [
+      ({ id, projectId, updateAt, doc, desc, score }) => [
         new Doc({
           pageContent: doc,
           metadata: {
             id: +id,
             projectId: +projectId,
+            desc,
             updateAt: new Date(updateAt),
           },
         }),
@@ -189,13 +190,14 @@ export class Milvus {
     }
 
     return queryResp.data.map(
-      ({ doc, id, projectId, updateAt }) =>
+      ({ id, projectId, doc, desc, updateAt }) =>
         new Doc({
           pageContent: doc,
           metadata: {
             id: +id,
             projectId: +projectId,
             updateAt: new Date(updateAt),
+            desc,
           },
         })
     )

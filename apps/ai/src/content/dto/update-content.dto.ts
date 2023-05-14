@@ -1,4 +1,4 @@
-import { IsEnum, IsInt, IsString } from 'class-validator'
+import { IsEnum, IsInt, IsOptional, IsString } from 'class-validator'
 import { EntityEnum, EntityType } from '@app/rmq/types'
 import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
@@ -13,5 +13,10 @@ export class UpdateContentDto {
   id: number
 
   @IsString()
-  content: string
+  @IsOptional()
+  content?: string
+
+  @IsString()
+  @IsOptional()
+  desc?: string
 }

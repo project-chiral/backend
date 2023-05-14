@@ -6,6 +6,9 @@ class NodeRelation {
   to: number[] = []
 }
 
+/**
+ * 表示以某个节点为主体的所有关系
+ */
 export class NodeRelationsEntity implements Record<RelationType, NodeRelation> {
   @Type(() => NodeRelation)
   HAPPENED_AFTER: NodeRelation = new NodeRelation()
