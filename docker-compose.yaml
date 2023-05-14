@@ -9,6 +9,8 @@ services:
       - db
       - neo4j
       - redis
+      - rmq
+      - milvus
     networks:
       chiral:
 
@@ -35,6 +37,18 @@ services:
     ports:
       - "7474:7474"
       - "7687:7687"
+    volumes:
+      - ./config/neo4j_conf/neo4j.conf:/conf/neo4j.conf
+      - neo4j/data:/var/lib/neo4j/data
+      - neo4j/logs:/var/lib/neo4j/logs
+      - neo4j/conf:/var/lib/neo4j/conf
+      - neo4j/import:/var/lib/neo4j/import
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "wget --no-verbose --tries=1 --spider localhost:7474 || exit 1"
+        ]
     networks:
       chiral:
 
@@ -48,17 +62,23 @@ services:
     command: [ "redis-server", "/etc/redis/redis.conf" ]
     volumes:
       - ./config/redis_conf/redis.conf:/etc/redis/redis.conf
+      - redis:/data
     networks:
       chiral:
 
 
   rmq:
-    image: rabbitmq:3.9.12-management-alpine
+    image: rabbitmq:3.12-management-alpine
     container_name: rmq
     restart: always
     ports:
       - "15672:15672"
       - "5672:5672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=$RMQ_USERNAME
+      - RABBITMQ_DEFAULT_PASS=$RMQ_PASSWORD
+    volumes:
+      - rmq:/var/lib/rabbitmq
     networks:
       chiral:
 
@@ -72,7 +92,7 @@ services:
       - ETCD_QUOTA_BACKEND_BYTES=4294967296
       - ETCD_SNAPSHOT_COUNT=50000
     volumes:
-      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/etcd:/etcd
+      - milvus/etcd:/etcd
     command: etcd -advertise-client-urls=http://127.0.0.1:2379 -listen-client-urls http://0.0.0.0:2379 --data-dir /etcd
   networks:
     chiral:
@@ -85,7 +105,7 @@ services:
       MINIO_ACCESS_KEY: minioadmin
       MINIO_SECRET_KEY: minioadmin
     volumes:
-      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/minio:/minio_data
+      - milvus/minio:/minio_data
     command: minio server /minio_data
     healthcheck:
       test:
@@ -103,14 +123,14 @@ services:
 
 
   milvus_standalone:
-    container_name: milvus-standalone
+    container_name: milvus
     image: milvusdb/milvus:v2.2.8
     command: [ "milvus", "run", "standalone" ]
     environment:
       ETCD_ENDPOINTS: etcd:2379
       MINIO_ADDRESS: minio:9000
     volumes:
-      - ${DOCKER_VOLUME_DIRECTORY:-.}/volumes/milvus:/var/lib/milvus
+      - milvus/milvus:/var/lib/milvus
     ports:
       - "19530:19530"
       - "9091:9091"
@@ -196,6 +216,14 @@ networks:
 
 volumes:
   db:
+    driver: local
+  redis:
+    driver: local
+  rmq:
+    driver: local
+  neo4j:
+    driver: local
+  milvus:
     driver: local
   etcd_data:
     driver: local

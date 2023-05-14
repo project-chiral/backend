@@ -6,6 +6,7 @@ import {
 } from './prompt'
 import { OpenAI } from 'langchain/llms/openai'
 import { BaseService } from '../base/base.service'
+import { ContentService } from '../content/content.service'
 import { PrismaService } from 'nestjs-prisma'
 
 @Injectable()
@@ -14,7 +15,8 @@ export class SummarizeService {
 
   constructor(
     private readonly baseService: BaseService,
-    private readonly prismaService: PrismaService
+    private readonly prismaService: PrismaService,
+    private readonly contentService: ContentService
   ) {
     this.llm = new OpenAI({ modelName: 'gpt-3.5-turbo' })
   }
@@ -40,9 +42,10 @@ export class SummarizeService {
       })
     )
 
-    await this.prismaService.event.update({
-      where: { id },
-      data: { description: resp },
+    await this.contentService.update({
+      type: 'event',
+      id,
+      desc: resp,
     })
 
     return resp

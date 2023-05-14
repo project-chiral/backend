@@ -6,11 +6,11 @@ import { UtilsService } from '@app/utils'
 @Injectable()
 export class SemanticService extends Tool {
   name = 'semantic_search_tool'
-  description = `retrieves several events that are most relevant to a given query and returns their specific description information, which can be used as a basis for obtaining the final answer.
-    Input format:
-    {{}}
-        "query": "user query"
-    {{}}`
+  description = `Retrieves several events that are most relevant to a given query and returns their specific description information, which can be used as a basis for obtaining the final answer.
+  Input format:
+  {{}}
+      "query": "user query"
+  {{}}`
 
   constructor(
     private readonly contentService: ContentService,

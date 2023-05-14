@@ -7,19 +7,19 @@ export class ContentEntity {
   id: number
   projectId: number
   content: string
+  desc: string
 
-  constructor(
-    id: number,
-    projectId: number,
-    type: EntityType,
-    content: string,
-    updateAt: Date
-  ) {
-    this.updateAt = updateAt
-    this.type = type
-    this.id = id
-    this.projectId = projectId
-    this.content = content
+  static fromDoc(type: EntityType, doc: Doc) {
+    const result = new ContentEntity()
+
+    result.type = type
+    result.updateAt = doc.metadata.updateAt
+    result.id = doc.metadata.id
+    result.projectId = doc.metadata.projectId
+    result.content = doc.pageContent
+    result.desc = doc.metadata.desc
+
+    return result
   }
 
   toDoc() {
@@ -28,6 +28,7 @@ export class ContentEntity {
         id: this.id,
         projectId: this.projectId,
         updateAt: this.updateAt,
+        desc: this.desc,
       },
       pageContent: this.content,
     })

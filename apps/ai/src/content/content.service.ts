@@ -40,14 +40,7 @@ export class ContentService {
       }
 
       const [doc] = query
-
-      const content = new ContentEntity(
-        id,
-        doc.metadata.projectId,
-        type,
-        doc.pageContent,
-        doc.metadata.updateAt
-      )
+      const content = ContentEntity.fromDoc(type, doc)
       await this.cache.set(key, content)
       return content
     }
@@ -66,22 +59,16 @@ export class ContentService {
       k
     )
 
-    return result.map(
-      ([doc]) =>
-        new ContentEntity(
-          doc.metadata.id,
-          doc.metadata.projectId,
-          type,
-          doc.pageContent,
-          doc.metadata.updateAt
-        )
-    )
+    return result.map(([doc]) => ContentEntity.fromDoc(type, doc))
   }
 
-  async update({ type, id, content }: UpdateContentDto) {
-    const result = await this.get({ type, id })
-    result.content = content
-    result.updateAt = new Date()
+  async update({ type, id, ...data }: UpdateContentDto) {
+    const content = await this.get({ type, id })
+    const result = plainToInstance(ContentEntity, {
+      ...content,
+      ...data,
+      updateAt: new Date(),
+    })
 
     const key = ContentKey({
       type,
