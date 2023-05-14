@@ -131,13 +131,13 @@ export class CharaService {
         ids,
         DAY_MILLISECONDS
       ),
-      this.graphService.createRelations(
-        ids.map((id) => ({
-          type: PARTICIPATED_IN,
+      this.graphService.createRelations({
+        type: PARTICIPATED_IN,
+        ids: ids.map((id) => ({
           from: id,
           to: eventId,
-        }))
-      ),
+        })),
+      }),
     ])
   }
 
@@ -161,7 +161,7 @@ export class CharaService {
           type: PARTICIPATED_IN,
           to: eventId,
         })
-      ).map((r) => +r.end)
+      ).map((r) => r.to)
 
       await this.cache.setWithExpire(ResolvedCharasKey({ eventId }), ids)
       return ids
@@ -188,6 +188,9 @@ export class CharaService {
 
   async addResolved(eventId: number, charaId: number) {
     const resolved = await this.getResolved(eventId)
+    if (resolved.includes(charaId)) {
+      return
+    }
 
     await Promise.all([
       this.cache.setWithExpire(
@@ -205,6 +208,9 @@ export class CharaService {
 
   async removeResolved(eventId: number, charaId: number) {
     const resolved = await this.getResolved(eventId)
+    if (!resolved.includes(charaId)) {
+      return
+    }
 
     await Promise.all([
       this.cache.setWithExpire(
@@ -222,9 +228,15 @@ export class CharaService {
 
   async removeUnresolved(eventId: number, name: string) {
     const unresolved = await this.getUnresolved(eventId)
+
+    const filtered = unresolved.filter((v) => v.name !== name)
+    if (unresolved.length === filtered.length) {
+      return
+    }
+
     await this.cache.setWithExpire(
       UnresolvedCharasKey({ eventId }),
-      unresolved.filter((v) => v.name !== name),
+      filtered,
       DAY_MILLISECONDS
     )
   }
@@ -239,8 +251,8 @@ export class CharaService {
 
   @Subscribe('ai_chara', 'entity_remove', ['event'])
   protected async handleEventRemove({ ids }: EntityRemoveMsg) {
-    const unresolved = ids.map((id) => UnresolvedCharasKey({ eventId: id }))
-    const resolved = ids.map((id) => ResolvedCharasKey({ eventId: id }))
+    const unresolved = ids.map((eventId) => UnresolvedCharasKey({ eventId }))
+    const resolved = ids.map((eventId) => ResolvedCharasKey({ eventId }))
 
     await this.cache.del([...unresolved, ...resolved])
   }

@@ -1,6 +1,7 @@
 import { GraphService } from '@app/graph'
 import { NodeIdDto } from '@app/graph/dto/node-id.dto'
 import { RelationIdDto } from '@app/graph/dto/relation-id.dto'
+import { RelationIdsDto } from '@app/graph/dto/relation-ids.dto'
 import { UtilsService } from '@app/utils'
 import {
   Body,
@@ -37,7 +38,7 @@ export class GraphController {
   }
 
   @Post('relation/batch')
-  async createRelations(@Body() dto: RelationIdDto[]) {
+  async createRelations(@Body() dto: RelationIdsDto) {
     return this.graphService.createRelations(dto)
   }
 
@@ -47,7 +48,7 @@ export class GraphController {
   }
 
   @Delete('relation/batch')
-  async removeRelations(@Body() dto: RelationIdDto[]) {
+  async removeRelations(@Body() dto: RelationIdsDto) {
     return this.graphService.removeRelations(dto)
   }
 
