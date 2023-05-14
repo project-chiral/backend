@@ -5,3 +5,4 @@ Dockerfile
 .prettierrc
 .gitignore
 README.md
+.env
