@@ -1,14 +1,12 @@
 import { MilvusClient } from '@zilliz/milvus2-sdk-node'
 import { DataType } from '@zilliz/milvus2-sdk-node/dist/milvus/const/Milvus.js'
 import { ErrorCode } from '@zilliz/milvus2-sdk-node/dist/milvus/types.js'
-import { Embeddings } from 'langchain/embeddings/base'
 import { EntityType } from '@app/rmq/types'
 import {
   QueryParams,
   PositionType,
   PartitionEnum,
   Doc,
-  VECTOR_DIM,
   IndexCreateParams,
   Fields,
   SearchParams,
@@ -18,21 +16,15 @@ export class Milvus {
   FilterType: QueryParams
   fields: string[]
   client: MilvusClient
-  embeddings: Embeddings
 
   indexSearchParams = JSON.stringify({ ef: 64 })
 
-  constructor(
-    embeddings: Embeddings,
-    args: {
-      url?: string
-      ssl?: boolean
-      username?: string
-      password?: string
-    }
-  ) {
-    this.embeddings = embeddings
-
+  constructor(args: {
+    url?: string
+    ssl?: boolean
+    username?: string
+    password?: string
+  }) {
     this.fields = Fields.map((v) => v.name)
 
     const url =
@@ -63,22 +55,16 @@ export class Milvus {
     return expr.join(' and ')
   }
 
-  async addDocuments(position: PositionType, documents: Doc[]): Promise<void> {
+  async addDocuments(
+    position: PositionType,
+    documents: Doc[],
+    embeddings: number[][]
+  ): Promise<void> {
     await this.ensureCollection(position.collection_name)
-
-    let vecs: number[][]
-    // 如果是未完成的文档，不进行embedding，直接填充0向量
-    if (position.partition_name === PartitionEnum.undone) {
-      vecs = Array(documents.length).fill(Array(VECTOR_DIM).fill(0))
-    } else {
-      vecs = await this.embeddings.embedDocuments(
-        documents.map((doc) => doc.pageContent)
-      )
-    }
 
     await this.addVectors(
       position,
-      vecs.map((vec, i) => ({
+      embeddings.map((vec, i) => ({
         doc: documents[i],
         vec,
       }))
@@ -130,14 +116,14 @@ export class Milvus {
   }
 
   async search(
-    position: PositionType,
+    type: EntityType,
     { query, ...filter }: SearchParams,
     k: number
   ): Promise<[Doc, number][]> {
-    await this.loadCollection(position)
+    await this.loadCollection({ collection_name: type })
 
     const searchResp = await this.client.search({
-      collection_name: position.collection_name,
+      collection_name: type,
       partition_names: [PartitionEnum.done],
       output_fields: this.fields.filter((field) => field !== 'vec'),
       search_params: {

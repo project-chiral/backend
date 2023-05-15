@@ -7,7 +7,6 @@ export class ContentEntity {
   id: number
   projectId: number
   content: string
-  desc: string
 
   static fromDoc(type: EntityType, doc: Doc) {
     const result = new ContentEntity()
@@ -17,7 +16,6 @@ export class ContentEntity {
     result.id = doc.metadata.id
     result.projectId = doc.metadata.projectId
     result.content = doc.pageContent
-    result.desc = doc.metadata.desc
 
     return result
   }
@@ -28,7 +26,7 @@ export class ContentEntity {
         id: this.id,
         projectId: this.projectId,
         updateAt: this.updateAt,
-        desc: this.desc,
+        desc: ' ',
       },
       pageContent: this.content,
     })

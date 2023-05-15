@@ -21,7 +21,7 @@ export class ContentService {
   constructor(
     private readonly vecstoreService: VecstoreService,
     private readonly schedule: SchedulerRegistry,
-    private cache: CacheService
+    private readonly cache: CacheService
   ) {}
 
   async get({ type, id }: GetContentQueryDto) {

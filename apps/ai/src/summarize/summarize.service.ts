@@ -42,10 +42,9 @@ export class SummarizeService {
       })
     )
 
-    await this.contentService.update({
-      type: 'event',
-      id,
-      desc: resp,
+    await this.prismaService.event.update({
+      where: { id },
+      data: { description: resp },
     })
 
     return resp
