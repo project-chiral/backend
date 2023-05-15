@@ -103,9 +103,7 @@ export class Milvus {
       fields_data: data.map(({ doc: { metadata, pageContent }, vec }) => ({
         doc: pageContent,
         vec,
-        id: metadata.id,
-        projectId: metadata.projectId,
-        updateAt: metadata.updateAt,
+        ...metadata,
       })),
     })
 
