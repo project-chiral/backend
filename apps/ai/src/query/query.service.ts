@@ -29,7 +29,7 @@ export class QueryService {
     if (!ids) {
       const events = await this.prismaService.event.findMany({
         where: { projectId },
-        select: { id: true },
+        select: { id: true, done: true },
       })
       const ids = events.map(({ id }) => id)
       await this.cache.setWithExpire(
