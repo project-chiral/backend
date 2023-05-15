@@ -17,6 +17,7 @@ import { CacheModule } from '@app/cache'
 import { UtilsModule } from '@app/utils'
 import { ServeStaticModule } from '@nestjs/serve-static'
 import { CaslModule } from './casl/casl.module';
+import { UserModule } from './user/user.module';
 
 @Module({
   imports: [
@@ -40,6 +41,7 @@ import { CaslModule } from './casl/casl.module';
     WorldviewModule,
     ProjectModule,
     CaslModule,
+    UserModule,
   ],
   controllers: [AppController],
   providers: [AppService],
