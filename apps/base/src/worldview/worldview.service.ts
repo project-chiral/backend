@@ -4,7 +4,6 @@ import { PrismaService } from 'nestjs-prisma'
 import type { CreateWorldviewDto } from './dto/create-worldview.dto'
 import type { UpdateWorldviewDto } from './dto/update-worldview.dto'
 import { WorldviewEntity } from './entities/worldview.entity'
-import { ToggleDoneDto } from '../dto/toggle-done.dto'
 import { RmqService } from '@app/rmq/rmq.service'
 
 @Injectable()
@@ -59,21 +58,14 @@ export class WorldviewService {
       ids: [id],
     })
 
-    return plainToInstance(WorldviewEntity, result)
-  }
-
-  async toggleDone(id: number, { done }: ToggleDoneDto) {
-    const result = await this.prismaService.worldview.update({
-      where: { id },
-      data: { done },
-    })
-
-    this.rmqService.publish('entity_done', ['worldview'], {
-      type: 'worldview',
-      ids: [id],
-      projectId: result.projectId,
-      done,
-    })
+    if (dto.done !== undefined) {
+      this.rmqService.publish('entity_done', ['worldview'], {
+        type: 'worldview',
+        ids: [id],
+        projectId: result.projectId,
+        done: dto.done,
+      })
+    }
 
     return plainToInstance(WorldviewEntity, result)
   }

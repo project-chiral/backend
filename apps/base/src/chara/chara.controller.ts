@@ -11,7 +11,6 @@ import { CharaService } from './chara.service'
 import { CreateCharaDto } from './dto/create-chara.dto'
 import { UpdateCharaDto } from './dto/update-chara.dto'
 import { ApiTags } from '@nestjs/swagger'
-import { ToggleDoneDto } from '../dto/toggle-done.dto'
 import { UtilsService } from '@app/utils'
 
 @ApiTags('chara')
@@ -40,11 +39,6 @@ export class CharaController {
   @Patch(':id')
   update(@Param('id') id: number, @Body() dto: UpdateCharaDto) {
     return this.charaService.update(id, dto)
-  }
-
-  @Patch(':id/done')
-  toggleDone(@Param('id') id: number, @Body() dto: ToggleDoneDto) {
-    return this.charaService.toggleDone(id, dto)
   }
 
   @Delete(':id')

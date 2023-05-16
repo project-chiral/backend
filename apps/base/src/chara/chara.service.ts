@@ -4,7 +4,6 @@ import type { UpdateCharaDto } from './dto/update-chara.dto'
 import { PrismaService } from 'nestjs-prisma'
 import { plainToInstance } from 'class-transformer'
 import { CharaEntity } from './entities/chara.entity'
-import { ToggleDoneDto } from '../dto/toggle-done.dto'
 import { RmqService } from '@app/rmq/rmq.service'
 
 @Injectable()
@@ -48,32 +47,25 @@ export class CharaService {
   }
 
   async update(id: number, dto: UpdateCharaDto) {
-    const chara = await this.prismaService.chara.update({
+    const result = await this.prismaService.chara.update({
       where: { id },
       data: dto,
     })
 
     this.rmqService.publish('entity_update', ['chara'], {
       type: 'chara',
-      projectId: chara.projectId,
-      ids: [id],
-    })
-
-    return plainToInstance(CharaEntity, chara)
-  }
-
-  async toggleDone(id: number, { done }: ToggleDoneDto) {
-    const result = await this.prismaService.chara.update({
-      where: { id },
-      data: { done },
-    })
-
-    this.rmqService.publish('entity_done', ['chara'], {
-      type: 'chara',
-      ids: [id],
       projectId: result.projectId,
-      done,
+      ids: [id],
     })
+
+    if (dto.done !== undefined) {
+      this.rmqService.publish('entity_done', ['chara'], {
+        type: 'chara',
+        ids: [id],
+        projectId: result.projectId,
+        done: dto.done,
+      })
+    }
 
     return plainToInstance(CharaEntity, result)
   }

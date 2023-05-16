@@ -4,7 +4,6 @@ import { PrismaService } from 'nestjs-prisma'
 import { CreateSceneDto } from './dto/create-scene.dto'
 import { UpdateSceneDto } from './dto/update-scene.dto'
 import { SceneEntity } from './entities/scene.entity'
-import { ToggleDoneDto } from '../dto/toggle-done.dto'
 import { RmqService } from '@app/rmq/rmq.service'
 
 @Injectable()
@@ -40,32 +39,25 @@ export class SceneService {
   }
 
   async update(id: number, dto: UpdateSceneDto) {
-    const scene = await this.prismaService.scene.update({
+    const result = await this.prismaService.scene.update({
       where: { id },
       data: dto,
     })
 
     this.rmqService.publish('entity_update', ['scene'], {
       type: 'scene',
-      projectId: scene.projectId,
-      ids: [id],
-    })
-
-    return plainToInstance(SceneEntity, scene)
-  }
-
-  async toggleDone(id: number, { done }: ToggleDoneDto) {
-    const result = await this.prismaService.scene.update({
-      where: { id },
-      data: { done },
-    })
-
-    this.rmqService.publish('entity_done', ['scene'], {
-      type: 'scene',
-      ids: [id],
       projectId: result.projectId,
-      done,
+      ids: [id],
     })
+
+    if (dto.done !== undefined) {
+      this.rmqService.publish('entity_done', ['scene'], {
+        type: 'scene',
+        ids: [id],
+        projectId: result.projectId,
+        done: dto.done,
+      })
+    }
 
     return plainToInstance(SceneEntity, result)
   }

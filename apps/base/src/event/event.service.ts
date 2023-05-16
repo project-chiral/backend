@@ -9,7 +9,6 @@ import type { CreateTodoDto } from './dto/todo/create-todo.dto'
 import type { UpdateTodoDto } from './dto/todo/update-todo.dto'
 import type { GetAllEventQueryDto } from './dto/event/get-all-event-query-dto'
 import { RmqService } from '@app/rmq/rmq.service'
-import { ToggleDoneDto } from '../dto/toggle-done.dto'
 
 @Injectable()
 export class EventService {
@@ -126,21 +125,14 @@ export class EventService {
       projectId: result.projectId,
     })
 
-    return plainToInstance(EventEntity, result)
-  }
-
-  async toggleDone(id: number, { done }: ToggleDoneDto) {
-    const result = await this.prismaService.event.update({
-      where: { id },
-      data: { done },
-    })
-
-    this.rmqService.publish('entity_done', ['event'], {
-      type: 'event',
-      ids: [id],
-      projectId: result.projectId,
-      done,
-    })
+    if (dto.done !== undefined) {
+      this.rmqService.publish('entity_done', ['event'], {
+        type: 'event',
+        ids: [id],
+        projectId: result.projectId,
+        done: dto.done,
+      })
+    }
 
     return plainToInstance(EventEntity, result)
   }

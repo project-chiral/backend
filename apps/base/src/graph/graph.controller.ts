@@ -2,7 +2,6 @@ import { GraphService } from '@app/graph'
 import { NodeIdDto } from '@app/graph/dto/node-id.dto'
 import { RelationIdDto } from '@app/graph/dto/relation-id.dto'
 import { RelationIdsDto } from '@app/graph/dto/relation-ids.dto'
-import { UtilsService } from '@app/utils'
 import {
   Body,
   Controller,
@@ -17,10 +16,7 @@ import { ApiTags } from '@nestjs/swagger'
 @ApiTags('graph')
 @Controller('graph')
 export class GraphController {
-  constructor(
-    private readonly graphService: GraphService,
-    private readonly utils: UtilsService
-  ) {}
+  constructor(private readonly graphService: GraphService) {}
 
   @Get('test')
   getTest() {
@@ -28,7 +24,7 @@ export class GraphController {
   }
 
   @Get('node/relations')
-  async getRelations(@Query() dto: NodeIdDto) {
+  async getNodeRelations(@Query() dto: NodeIdDto) {
     return this.graphService.getNodeRelations(dto)
   }
 
