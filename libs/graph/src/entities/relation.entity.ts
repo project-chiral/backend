@@ -9,4 +9,7 @@ export class RelationEntity {
 
   @Type(() => Number)
   to: number
+
+  @Type(() => Object)
+  props: Record<string, any>
 }
