@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from 'nestjs-prisma'
 import { CharaList } from './types'
-import { CharaListKey, ResolvedCharasKey, UnresolvedCharasKey } from './const'
+import { CharaListKey, UnresolvedCharasKey } from './const'
 import { Subscribe } from '@app/rmq/decorator'
 import { EntityRemoveMsg, EntityUpdateMsg } from '@app/rmq/subscribe'
 import { CharaOption, UnresolvedCharasDto } from './dto/unresolved.dto'
@@ -45,11 +45,17 @@ export class CharaService {
     return list
   }
 
+  /**
+   * 实体识别
+   */
   private async recognize(doc: string) {
     const resp = await this.llm.call(CharaRecognizePrompt({ doc }))
     return JSON.parse(resp.replace("'", '"')) as string[]
   }
 
+  /**
+   * 实体链接
+   */
   private link(
     targetName: string,
     list: CharaList,
@@ -125,20 +131,13 @@ export class CharaService {
   }
 
   private async _handleResolved(eventId: number, ids: number[]) {
-    await Promise.all([
-      this.cache.setWithExpire(
-        ResolvedCharasKey({ eventId }),
-        ids,
-        DAY_MILLISECONDS
-      ),
-      this.graphService.createRelations({
-        type: PARTICIPATED_IN,
-        ids: ids.map((id) => ({
-          from: id,
-          to: eventId,
-        })),
-      }),
-    ])
+    await this.graphService.createRelations({
+      type: PARTICIPATED_IN,
+      ids: ids.map((id) => ({
+        from: id,
+        to: eventId,
+      })),
+    })
   }
 
   private async _handleUnresolved(
@@ -152,78 +151,11 @@ export class CharaService {
     )
   }
 
-  async getResolved(eventId: number) {
-    const ids = await this.cache.get<number[]>(ResolvedCharasKey({ eventId }))
-
-    if (!ids) {
-      const ids = (
-        await this.graphService.getRelation({
-          type: PARTICIPATED_IN,
-          to: eventId,
-        })
-      ).map((r) => r.to)
-
-      await this.cache.setWithExpire(ResolvedCharasKey({ eventId }), ids)
-      return ids
-    }
-
-    return ids
-  }
-
   async getUnresolved(eventId: number) {
     const resp =
       (await this.cache.get<object[]>(UnresolvedCharasKey({ eventId }))) ?? []
 
     return plainToInstance(UnresolvedCharasDto, resp)
-  }
-
-  async get(eventId: number) {
-    const [resolved, unresolved] = await Promise.all([
-      this.getResolved(eventId),
-      this.getUnresolved(eventId),
-    ])
-
-    return plainToInstance(CharaResolveEntity, { resolved, unresolved })
-  }
-
-  async addResolved(eventId: number, charaId: number) {
-    const resolved = await this.getResolved(eventId)
-    if (resolved.includes(charaId)) {
-      return
-    }
-
-    await Promise.all([
-      this.cache.setWithExpire(
-        ResolvedCharasKey({ eventId }),
-        [...resolved, charaId],
-        DAY_MILLISECONDS
-      ),
-      this.graphService.createRelation({
-        type: PARTICIPATED_IN,
-        from: charaId,
-        to: eventId,
-      }),
-    ])
-  }
-
-  async removeResolved(eventId: number, charaId: number) {
-    const resolved = await this.getResolved(eventId)
-    if (!resolved.includes(charaId)) {
-      return
-    }
-
-    await Promise.all([
-      this.cache.setWithExpire(
-        ResolvedCharasKey({ eventId }),
-        resolved.filter((v) => v !== charaId),
-        DAY_MILLISECONDS
-      ),
-      this.graphService.removeRelation({
-        type: PARTICIPATED_IN,
-        from: charaId,
-        to: eventId,
-      }),
-    ])
   }
 
   async removeUnresolved(eventId: number, name: string) {
@@ -252,9 +184,7 @@ export class CharaService {
   @Subscribe('ai_chara', 'entity_remove', ['event'])
   protected async handleEventRemove({ ids }: EntityRemoveMsg) {
     const unresolved = ids.map((eventId) => UnresolvedCharasKey({ eventId }))
-    const resolved = ids.map((eventId) => ResolvedCharasKey({ eventId }))
-
-    await this.cache.del([...unresolved, ...resolved])
+    await this.cache.del(unresolved)
   }
 }
 

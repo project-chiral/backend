@@ -1,4 +1,4 @@
-import { Controller, Get, Param, Post, Put, Delete } from '@nestjs/common'
+import { Controller, Get, Param, Post, Delete } from '@nestjs/common'
 import { CharaService } from './chara.service'
 import { ApiTags } from '@nestjs/swagger'
 
@@ -7,30 +7,14 @@ import { ApiTags } from '@nestjs/swagger'
 export class CharaController {
   constructor(private readonly charaService: CharaService) {}
 
-  @Get(':id')
-  get(@Param('id') eventId: number) {
-    return this.charaService.get(eventId)
-  }
-
   @Post(':id')
   resolve(@Param('id') eventId: number) {
     return this.charaService.resolve(eventId)
   }
 
-  @Put(':eventId/resolved/:charaId')
-  addResolved(
-    @Param('eventId') eventId: number,
-    @Param('charaId') charaId: number
-  ) {
-    return this.charaService.addResolved(eventId, charaId)
-  }
-
-  @Delete(':eventId/resolved/:charaId')
-  removeResolved(
-    @Param('eventId') eventId: number,
-    @Param('charaId') charaId: number
-  ) {
-    return this.charaService.removeResolved(eventId, charaId)
+  @Get(':eventId/unresolved')
+  getUnresolved(@Param('eventId') eventId: number) {
+    return this.charaService.getUnresolved(eventId)
   }
 
   @Delete(':eventId/unresolved/:name')
