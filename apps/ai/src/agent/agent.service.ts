@@ -9,28 +9,24 @@ import {
   ChatPromptTemplate,
   SystemMessagePromptTemplate,
 } from 'langchain/prompts'
+import { Prefix, Suffix, inputVariables } from './prompt'
+import { Lang } from '../const'
 
 @Injectable()
 export class AgentService {
-  executor: AgentExecutor
   model: OpenAIChat
+  tools: Tool[]
 
   constructor(private readonly semanticService: SemanticService) {
-    const tools: Tool[] = [semanticService]
-    this.model = new OpenAIChat({ temperature: 0.4, verbose: true })
+    this.tools = [semanticService]
+    this.model = new OpenAIChat({ temperature: 0.8 })
+  }
 
-    const prompt = ZeroShotAgent.createPrompt(tools, {
-      suffix: `The final answer should include supporting evidence and be in the following format:
-    "Final Answer: 根据 [@<id>] 和 [@<id>] 提供的信息, 我认为..."
-    Where [@<id>] are the id of the events you want to use as evidence.
-
-    The final answer should be in Chinese Simpified.
-
-    Begin!
-
-    Question: {input}
-    Thought: {agent_scratchpad}`,
-      inputVariables: ['input', 'agent_scratchpad'],
+  createExecutor() {
+    const prompt = ZeroShotAgent.createPrompt(this.tools, {
+      prefix: Prefix[Lang.EN],
+      suffix: Suffix[Lang.EN],
+      inputVariables,
     })
 
     const chatPrompt = ChatPromptTemplate.fromPromptMessages([
@@ -44,16 +40,17 @@ export class AgentService {
 
     const agent = new ZeroShotAgent({
       llmChain,
-      allowedTools: tools.map(({ name }) => name),
+      allowedTools: this.tools.map(({ name }) => name),
     })
-    this.executor = AgentExecutor.fromAgentAndTools({
+    return AgentExecutor.fromAgentAndTools({
       agent,
-      tools,
+      tools: this.tools,
     })
   }
 
   async baseQA(query: string) {
-    const resp = await this.executor.call({
+    const executor = this.createExecutor()
+    const resp = await executor.call({
       input: query,
     })
     return resp.output as string
