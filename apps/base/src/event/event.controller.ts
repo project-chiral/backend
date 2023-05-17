@@ -10,7 +10,6 @@ import {
 } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 import { CreateEventDto } from './dto/event/create-event.dto'
-import { GetAllEventQueryDto } from './dto/event/get-all-event-query-dto'
 import { GetEventsByRangeQueryDto } from './dto/event/get-events-by-range-query.dto'
 import { UpdateEventDto } from './dto/event/update-event.dto'
 import { CreateTodoDto } from './dto/todo/create-todo.dto'
@@ -18,6 +17,7 @@ import { UpdateTodoDto } from './dto/todo/update-todo.dto'
 import { EventService } from './event.service'
 import { GetEventBatchDto } from './dto/event/get-event-batch.dto'
 import { UtilsService } from '@app/utils'
+import { PagenationDto } from '../dto/pagenation.dto'
 
 @ApiTags('event')
 @Controller('event')
@@ -35,7 +35,7 @@ export class EventController {
   }
 
   @Get('list')
-  async getAll(@Query() dto: GetAllEventQueryDto) {
+  async getAll(@Query() dto: PagenationDto) {
     return this.eventService.getAll(this.utils.getProjectId(), dto)
   }
 
@@ -61,7 +61,8 @@ export class EventController {
 
   @Post()
   create(@Body() dto: CreateEventDto) {
-    return this.eventService.create(this.utils.getProjectId(), dto)
+    const projectId = this.utils.getProjectId()
+    return this.eventService.create(projectId, dto)
   }
 
   @Put(':id')

@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer'
-import { IsInt, IsOptional, Min } from 'class-validator'
+import { IsInt, Min, IsOptional } from 'class-validator'
 
-export class GetAllEventQueryDto {
+export class PagenationDto {
   @IsInt()
   @Min(0)
   @IsOptional()

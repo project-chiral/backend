@@ -20,9 +20,6 @@ export class NodeRelationsEntity implements Record<RelationType, NodeRelation> {
   AFFECTED: NodeRelation = new NodeRelation()
 
   @Type(() => NodeRelation)
-  INCLUDES: NodeRelation = new NodeRelation()
-
-  @Type(() => NodeRelation)
   OCCURRED_IN: NodeRelation = new NodeRelation()
 
   @Type(() => NodeRelation)

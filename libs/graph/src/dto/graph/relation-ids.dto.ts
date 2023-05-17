@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger'
 import { IsEnum, IsInt, IsOptional, ValidateNested } from 'class-validator'
-import { RelationEnum, RelationType } from '../schema'
+import { RelationEnum, RelationType } from '../../schema'
 import { Type } from 'class-transformer'
 
 class Relation {

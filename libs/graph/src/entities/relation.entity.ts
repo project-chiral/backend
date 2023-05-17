@@ -1,7 +1,9 @@
 import { Type } from 'class-transformer'
-import type { RelationType } from '../schema'
+import { RelationEnum, RelationType } from '../schema'
+import { ApiProperty } from '@nestjs/swagger'
 
 export class RelationEntity {
+  @ApiProperty({ enum: RelationEnum })
   type: RelationType
 
   @Type(() => Number)

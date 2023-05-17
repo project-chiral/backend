@@ -1,8 +1,10 @@
-import { EntityType } from '@app/rmq/types'
+import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
+import { NodeEnum, NodeType } from '../schema'
 
 export class NodeEntity {
-  type: EntityType
+  @ApiProperty({ enum: NodeEnum })
+  type: NodeType
 
   @Type(() => Number)
   id: number

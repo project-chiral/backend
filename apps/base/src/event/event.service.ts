@@ -7,14 +7,17 @@ import { EventEntity } from './entities/event.entity'
 import { EventTodoEntity } from './entities/event-todo.entity'
 import type { CreateTodoDto } from './dto/todo/create-todo.dto'
 import type { UpdateTodoDto } from './dto/todo/update-todo.dto'
-import type { GetAllEventQueryDto } from './dto/event/get-all-event-query-dto'
 import { RmqService } from '@app/rmq/rmq.service'
+import { PagenationDto } from '../dto/pagenation.dto'
+import { UpdateEventRespDto } from './dto/event/update-event-resp.dto'
+import { GraphService } from '@app/graph'
 
 @Injectable()
 export class EventService {
   constructor(
     private readonly prismaService: PrismaService,
-    private readonly rmqService: RmqService
+    private readonly rmqService: RmqService,
+    private readonly graphService: GraphService
   ) {}
 
   // ---------------------------------- event ---------------------------------
@@ -35,7 +38,7 @@ export class EventService {
     return plainToInstance(EventEntity, results)
   }
 
-  async getAll(projectId: number, { size, page = 0 }: GetAllEventQueryDto) {
+  async getAll(projectId: number, { size, page = 0 }: PagenationDto) {
     const results = await this.prismaService.event.findMany({
       where: { projectId },
       skip: (size ?? 0) * page,
@@ -114,7 +117,11 @@ export class EventService {
   }
 
   async update(id: number, dto: UpdateEventDto) {
-    const result = await this.prismaService.event.update({
+    const before = await this.prismaService.event.findUniqueOrThrow({
+      where: { id },
+    })
+
+    const after = await this.prismaService.event.update({
       where: { id },
       data: { ...dto },
     })
@@ -122,19 +129,19 @@ export class EventService {
     this.rmqService.publish('entity_update', ['event'], {
       type: 'event',
       ids: [id],
-      projectId: result.projectId,
+      projectId: after.projectId,
     })
 
     if (dto.done !== undefined) {
       this.rmqService.publish('entity_done', ['event'], {
         type: 'event',
         ids: [id],
-        projectId: result.projectId,
+        projectId: after.projectId,
         done: dto.done,
       })
     }
 
-    return plainToInstance(EventEntity, result)
+    return plainToInstance(UpdateEventRespDto, { before, after })
   }
 
   async remove(id: number) {
@@ -142,17 +149,11 @@ export class EventService {
       where: { id },
     })
 
-    const subs = await this.prismaService.event.findMany({
-      where: { path: { startsWith: `${result.path}/` } },
-      select: { id: true },
+    const subs = await this.graphService.getAllSubTrees({
+      type: 'event',
+      id,
     })
-    const subIds = subs.map((v) => v.id)
-
-    if (subIds.length > 0) {
-      await this.prismaService.event.deleteMany({
-        where: { id: { in: subIds } },
-      })
-    }
+    const subIds = subs.map((sub) => sub.id)
 
     this.rmqService.publish('entity_remove', ['event'], {
       type: 'event',
@@ -160,7 +161,7 @@ export class EventService {
       projectId: result.projectId,
     })
 
-    return plainToInstance(EventEntity, result)
+    return plainToInstance(EventEntity, [result, ...subs])
   }
 
   // ---------------------------------- todo ---------------------------------
