@@ -1,4 +1,4 @@
-import { EntityType } from '@app/rmq/types'
+import { ContentType } from '@app/rmq/types'
 import { Injectable } from '@nestjs/common'
 import { Tool } from 'langchain/tools'
 import { PrismaService } from 'nestjs-prisma'
@@ -52,7 +52,7 @@ export class MetaService extends Tool {
 
   protected async _call(query: string): Promise<string> {
     const { type, ids } = JSON.parse(query) as {
-      type: EntityType
+      type: ContentType
       ids: number[]
     }
 

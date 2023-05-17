@@ -1,7 +1,7 @@
 import { MilvusClient } from '@zilliz/milvus2-sdk-node'
 import { DataType } from '@zilliz/milvus2-sdk-node/dist/milvus/const/Milvus.js'
 import { ErrorCode } from '@zilliz/milvus2-sdk-node/dist/milvus/types.js'
-import { EntityType } from '@app/rmq/types'
+import { ContentType } from '@app/rmq/types'
 import {
   QueryParams,
   PositionType,
@@ -116,7 +116,7 @@ export class Milvus {
   }
 
   async search(
-    type: EntityType,
+    type: ContentType,
     { query, ...filter }: SearchParams,
     k: number
   ): Promise<[Doc, number][]> {
@@ -187,7 +187,7 @@ export class Milvus {
     )
   }
 
-  async flush(collection_names: EntityType[]) {
+  async flush(collection_names: ContentType[]) {
     await Promise.all(
       collection_names.map((collection_name) =>
         this.ensureCollection(collection_name)
@@ -199,7 +199,7 @@ export class Milvus {
     })
   }
 
-  async ensureCollection(collection_name: EntityType) {
+  async ensureCollection(collection_name: ContentType) {
     const hasColResp = await this.client.hasCollection({
       collection_name,
     })

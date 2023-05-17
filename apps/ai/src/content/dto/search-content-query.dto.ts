@@ -1,12 +1,12 @@
-import { EntityEnum, EntityType } from '@app/rmq/types'
+import { ContentEnum, ContentType } from '@app/rmq/types'
 import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import { IsEnum, IsNotEmpty, IsNumber, IsString, Min } from 'class-validator'
 
 export class SearchContentQueryDto {
-  @ApiProperty({ enum: EntityEnum })
-  @IsEnum(EntityEnum)
-  type: EntityType
+  @ApiProperty({ enum: ContentEnum })
+  @IsEnum(ContentEnum)
+  type: ContentType
 
   @IsString()
   @IsNotEmpty()

@@ -1,4 +1,4 @@
-import { EntityType } from '@app/rmq/types'
+import { ContentType } from '@app/rmq/types'
 import { DataType, FieldType } from '@zilliz/milvus2-sdk-node/dist/milvus'
 import { Document } from 'langchain/document'
 /**
@@ -27,7 +27,7 @@ export enum PartitionEnum {
 }
 
 export interface PositionType {
-  collection_name: EntityType
+  collection_name: ContentType
   partition_name?: PartitionEnum
 }
 

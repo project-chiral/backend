@@ -1,13 +1,13 @@
-import { EntityType } from '../types'
+import { ContentType } from '../types'
 
 export interface EntityCreateMsg {
-  type: EntityType
+  type: ContentType
   ids: number[]
   projectId: number
 }
 
 export interface EntityUpdateMsg {
-  type: EntityType
+  type: ContentType
   ids: number[]
   projectId: number
 }
@@ -16,7 +16,7 @@ export interface EntityUpdateMsg {
  * 实体done状态变化消息
  */
 export interface EntityDoneMsg {
-  type: EntityType
+  type: ContentType
   ids: number[]
   projectId: number
   done: boolean
@@ -26,7 +26,7 @@ export interface EntityDoneMsg {
  * 实体移除消息
  */
 export interface EntityRemoveMsg {
-  type: EntityType
+  type: ContentType
   ids: number[]
   projectId: number
 }

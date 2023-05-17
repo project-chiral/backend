@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from 'nestjs-prisma'
 import { LangKey } from '../const'
-import { EntityType } from '@app/rmq/types'
+import { ContentType } from '@app/rmq/types'
 import { ContentService } from '../content/content.service'
 import { CacheService } from '@app/cache'
 
@@ -13,7 +13,7 @@ export class BaseService {
     private readonly prismaService: PrismaService
   ) {}
 
-  private async _getProjectId(type: EntityType, id: number) {
+  private async _getProjectId(type: ContentType, id: number) {
     const filter = {
       where: { id },
       select: { projectId: true },
@@ -50,11 +50,11 @@ export class BaseService {
     return lang
   }
 
-  async content(type: EntityType, id: number) {
+  async content(type: ContentType, id: number) {
     return this.contentService.get({ type, id })
   }
 
-  async baseParams(type: EntityType, id: number) {
+  async baseParams(type: ContentType, id: number) {
     const projectId = await this._getProjectId(type, id)
     const [{ content: doc }, lang] = await Promise.all([
       this.contentService.get({

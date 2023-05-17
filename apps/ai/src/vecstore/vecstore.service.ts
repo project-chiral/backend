@@ -11,7 +11,7 @@ import {
   SearchParams,
   VECTOR_DIM,
 } from './schema'
-import { EntityType } from '@app/rmq/types'
+import { ContentType } from '@app/rmq/types'
 import { OpenAI } from 'langchain/llms/openai'
 import { Embeddings } from 'langchain/embeddings/base'
 import { OpenAIEmbeddings } from 'langchain/embeddings/openai'
@@ -37,11 +37,11 @@ export class VecstoreService {
     return Array<number[]>(n).fill(Array<number>(VECTOR_DIM).fill(0))
   }
 
-  async search(type: EntityType, params: SearchParams, k = 10) {
+  async search(type: ContentType, params: SearchParams, k = 10) {
     return this.vecstore.search(type, params, k)
   }
 
-  async simSearch(type: EntityType, params: SimSearchParams, k = 10) {
+  async simSearch(type: ContentType, params: SimSearchParams, k = 10) {
     return this.simSearch(type, params, k)
   }
 

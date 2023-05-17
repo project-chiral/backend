@@ -1,14 +1,14 @@
-import { EntityType } from '@app/rmq/types'
+import { ContentType } from '@app/rmq/types'
 import { Doc } from '../../vecstore/schema'
 
 export class ContentEntity {
   updateAt: Date
-  type: EntityType
+  type: ContentType
   id: number
   projectId: number
   content: string
 
-  static fromDoc(type: EntityType, doc: Doc) {
+  static fromDoc(type: ContentType, doc: Doc) {
     const result = new ContentEntity()
 
     result.type = type
