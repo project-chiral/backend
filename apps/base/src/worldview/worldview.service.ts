@@ -21,10 +21,16 @@ export class WorldviewService {
       },
     })
 
-    this.rmqService.publish('entity_create', ['worldview'], {
+    this.rmqService.publish('content_create', ['worldview'], {
       type: 'worldview',
       projectId,
-      ids: [result.id],
+      data: [
+        {
+          id: result.id,
+          order: result.id,
+          name: result.name,
+        },
+      ],
     })
 
     return plainToInstance(WorldviewEntity, result)
@@ -52,14 +58,19 @@ export class WorldviewService {
       data: dto,
     })
 
-    this.rmqService.publish('entity_update', ['worldview'], {
+    this.rmqService.publish('content_update', ['worldview'], {
       type: 'worldview',
       projectId: result.projectId,
-      ids: [id],
+      data: [
+        {
+          id: result.id,
+          name: dto.name,
+        },
+      ],
     })
 
     if (dto.done !== undefined) {
-      this.rmqService.publish('entity_done', ['worldview'], {
+      this.rmqService.publish('content_done', ['worldview'], {
         type: 'worldview',
         ids: [id],
         projectId: result.projectId,
@@ -90,7 +101,7 @@ export class WorldviewService {
       })
     }
 
-    this.rmqService.publish('entity_remove', ['worldview'], {
+    this.rmqService.publish('content_remove', ['worldview'], {
       type: 'worldview',
       ids: [id, ...subIds],
       projectId: result.projectId,

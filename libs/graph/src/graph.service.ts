@@ -5,7 +5,12 @@ import { NodeEntity } from './entities/node.entity'
 import { RelationEntity } from './entities/relation.entity'
 import { CypherService } from './cypher/cypher.service'
 import { RelationSchema } from './schema'
-import { Subscribe, EntityCreateMsg, EntityRemoveMsg } from '@app/rmq/index'
+import {
+  Subscribe,
+  ContentCreateMsg,
+  ContentRemoveMsg,
+  ContentUpdateMsg,
+} from '@app/rmq/index'
 import { NodeRelationsEntity } from './entities/node-relations.entity'
 import { GetTreeRootQueryDto } from './dto/tree/get-tree-root-query.dto'
 import { TreeSchema } from './tree-schema'
@@ -15,14 +20,12 @@ import { RelationIdsDto } from './dto/graph/relation-ids.dto'
 import { TreeIdDto } from './dto/tree/tree-id.dto'
 import { ConnectTreesDto } from './dto/tree/connect-trees.dto'
 import { DisconnectTreesDto } from './dto/tree/disconnect-trees.dto'
+import { MergeNodesDto } from './dto/graph/merge-nodes.dto'
 
 const RelationReturn = (name = 'r') => `
 type(${name}) as type,
 startnode(${name}).id as from,
 endnode(${name}).id as to,
-properties(${name}) as props`
-
-const nodeReturn = (name = 'n') => `
 properties(${name}) as props`
 
 @Injectable()
@@ -125,54 +128,17 @@ export class GraphService {
     return plainToInstance(RelationEntity, query)
   }
 
-  async createNode(projectId: number, { type, id }: NodeIdDto) {
-    const query = (
-      await this.cypherService.execute`
-    merge (n:${type} ${{ id, projectId }})
-    return ${nodeReturn()}
-    `.run()
-    )[0]
-
-    return (
-      query?.props &&
-      plainToInstance(NodeEntity, {
-        type,
-        ...query.props,
-      })
-    )
-  }
-
-  async createNodes(projectId: number, { type, ids }: NodeIdsDto) {
+  async mergeNodes(projectId: number, { type, nodes }: MergeNodesDto) {
     const query = await this.cypherService.execute`
-    unwind ${ids} as id
-    merge (n:${type} {id:id, projectId:${projectId}})
-    return ${nodeReturn()}
+    unwind ${nodes} as node
+    merge (n:${type} {id:node.id, projectId:${projectId}})
+    set n += node
+    return n
     `.run()
 
     return plainToInstance(
       NodeEntity,
-      query.map(({ props }) => ({
-        type,
-        ...props,
-      }))
-    )
-  }
-
-  async removeNode({ type, id }: NodeIdDto) {
-    const query = (
-      await this.cypherService.execute`
-    match (n:${type} ${{ id }})
-    detach delete n
-    return ${nodeReturn()}
-    `.run()
-    )[0]
-
-    return (
-      query?.props &&
-      plainToInstance(NodeEntity, {
-        type,
-        ...query.props,
-      })
+      query.map(({ n }) => n)
     )
   }
 
@@ -186,54 +152,49 @@ export class GraphService {
 
   // ---------------------------------- tree ----------------------------------
 
-  async getTreeRoots(projectId: number, { type }: GetTreeRootQueryDto) {
+  async getTreeRoots(
+    projectId: number,
+    { type, page = 0, size }: GetTreeRootQueryDto
+  ) {
     const relType = TreeSchema(type)
     const query = await this.cypherService.execute`
     match (n:${relType} {projectId:${projectId}})
     where not ()-[:${type}]->(n)
-    return ${nodeReturn()}
+    order by n.order
+    return n
+    skip ${page * (size ?? 0)}
+    ${size && `limit ${size}`}
     `.run()
 
     return plainToInstance(
       NodeEntity,
-      query.map(({ props }) => ({
-        type,
-        ...props,
-      }))
+      query.map(({ n }) => n)
     )
   }
 
   async getSupTree({ type, id }: TreeIdDto) {
     const relType = TreeSchema(type)
-    const query = (
-      await this.cypherService.execute`
+    const query = await this.cypherService.execute`
     match (n)-[:${relType}]->(:${type} ${{ id }})
-    return ${nodeReturn()}
+    return n
     `.run()
-    )[0]
 
-    return (
-      query?.props &&
-      plainToInstance(NodeEntity, {
-        type,
-        ...query.props,
-      })
+    return plainToInstance(
+      NodeEntity,
+      query.map(({ n }) => n)
     )
   }
 
   async getAllSupTrees({ type, id }: TreeIdDto) {
     const relType = TreeSchema(type)
     const query = await this.cypherService.execute`
-    match (n)-[:${relType}*]->(:${type} ${{ id }})
-    return ${nodeReturn()}
+    match (n)-[:${relType} *0..]->(:${type} ${{ id }})
+    return n
     `.run()
 
     return plainToInstance(
       NodeEntity,
-      query.map(({ props }) => ({
-        type,
-        ...props,
-      }))
+      query.map(({ n }) => n)
     )
   }
 
@@ -241,15 +202,12 @@ export class GraphService {
     const relType = TreeSchema(type)
     const query = await this.cypherService.execute`
     match (:${type} ${{ id }})-[:${relType}]->(n)
-    return ${nodeReturn()}
+    return n
     `.run()
 
     return plainToInstance(
       NodeEntity,
-      query.map(({ props }) => ({
-        type,
-        ...props,
-      }))
+      query.map(({ n }) => n)
     )
   }
 
@@ -257,38 +215,35 @@ export class GraphService {
     const relType = TreeSchema(type)
     const query = await this.cypherService.execute`
     match (:${type} ${{ id }})-[:${relType}*]->(n)
-    return ${nodeReturn()}
+    return n
     `.run()
 
     return plainToInstance(
       NodeEntity,
-      query.map(({ props }) => ({
-        type,
-        ...props,
-      }))
+      query.map(({ n }) => n)
     )
   }
 
   async connectTrees({ type, from, to }: ConnectTreesDto) {
     const relType = TreeSchema(type)
+    // 删除子节点原有的父节点
     const query = await this.cypherService.execute`
     unwind ${to} as id
-    optional match (n)-[r:${relType}]->(:${type} {id:id})
+    match (n)-[r:${relType}]->(:${type} {id:id})
     delete r
-    with n
+    return n
+    `.run()
 
+    // 连接子节点到新的父节点
+    await this.cypherService.execute`
     unwind ${to} as id
     optional match (from:${type} {id:${from}}), (to:${type} {id:id})
     merge (from)-[:${relType}]->(to)
-    return ${nodeReturn()}
     `.run()
 
     return plainToInstance(
       NodeEntity,
-      query.map(({ props }) => ({
-        type,
-        ...props,
-      }))
+      query.map(({ n }) => n)
     )
   }
 
@@ -301,15 +256,12 @@ export class GraphService {
       -[r:${relType}]->
       (:${type} {id:id})
     delete r
-    return ${nodeReturn()}
+    return n
     `.run()
 
     return plainToInstance(
       NodeEntity,
-      query.map(({ props }) => ({
-        type,
-        ...props,
-      }))
+      query.map(({ n }) => n)
     )
   }
 
@@ -323,17 +275,26 @@ export class GraphService {
 
   // ----------------------------------- subscribe ----------------------------------
 
-  @Subscribe('graph', 'entity_create')
+  @Subscribe('graph', 'content_create')
   protected async handleEntityCreate({
     type,
-    ids,
+    data,
     projectId,
-  }: EntityCreateMsg) {
-    await this.createNodes(projectId, { type, ids })
+  }: ContentCreateMsg) {
+    await this.mergeNodes(projectId, { type, nodes: data })
   }
 
-  @Subscribe('graph', 'entity_remove')
-  protected async handleEntityRemove({ type, ids }: EntityRemoveMsg) {
+  @Subscribe('graph', 'content_update')
+  protected async handleEntityUpdate({
+    type,
+    data,
+    projectId,
+  }: ContentUpdateMsg) {
+    await this.mergeNodes(projectId, { type, nodes: data })
+  }
+
+  @Subscribe('graph', 'content_remove')
+  protected async handleEntityRemove({ type, ids }: ContentRemoveMsg) {
     await this.removeNodes({ type, ids })
   }
 }

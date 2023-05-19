@@ -9,7 +9,6 @@ import type { CreateTodoDto } from './dto/todo/create-todo.dto'
 import type { UpdateTodoDto } from './dto/todo/update-todo.dto'
 import { RmqService } from '@app/rmq/rmq.service'
 import { PagenationDto } from '../dto/pagenation.dto'
-import { UpdateEventRespDto } from './dto/event/update-event-resp.dto'
 import { GraphService } from '@app/graph'
 
 @Injectable()
@@ -107,9 +106,16 @@ export class EventService {
       },
     })
 
-    this.rmqService.publish('entity_create', ['event'], {
+    this.rmqService.publish('content_create', ['event'], {
       type: 'event',
-      ids: [result.id],
+      data: [
+        {
+          id: result.id,
+          // 采用事件开始时间的时间戳作为排序依据
+          order: dto.start.getTime(),
+          name: result.name,
+        },
+      ],
       projectId,
     })
 
@@ -117,31 +123,33 @@ export class EventService {
   }
 
   async update(id: number, dto: UpdateEventDto) {
-    const before = await this.prismaService.event.findUniqueOrThrow({
-      where: { id },
-    })
-
-    const after = await this.prismaService.event.update({
+    const result = await this.prismaService.event.update({
       where: { id },
       data: { ...dto },
     })
 
-    this.rmqService.publish('entity_update', ['event'], {
+    this.rmqService.publish('content_update', ['event'], {
       type: 'event',
-      ids: [id],
-      projectId: after.projectId,
+      data: [
+        {
+          id: result.id,
+          order: dto.start?.getTime(),
+          name: result.name,
+        },
+      ],
+      projectId: result.projectId,
     })
 
     if (dto.done !== undefined) {
-      this.rmqService.publish('entity_done', ['event'], {
+      this.rmqService.publish('content_done', ['event'], {
         type: 'event',
         ids: [id],
-        projectId: after.projectId,
+        projectId: result.projectId,
         done: dto.done,
       })
     }
 
-    return plainToInstance(UpdateEventRespDto, { before, after })
+    return plainToInstance(EventEntity, result)
   }
 
   async remove(id: number) {
@@ -153,9 +161,9 @@ export class EventService {
       type: 'event',
       id,
     })
-    const subIds = subs.map((sub) => sub.id)
+    const subIds = subs.map((sub) => sub.properties.id)
 
-    this.rmqService.publish('entity_remove', ['event'], {
+    this.rmqService.publish('content_remove', ['event'], {
       type: 'event',
       ids: [result.id, ...subIds],
       projectId: result.projectId,

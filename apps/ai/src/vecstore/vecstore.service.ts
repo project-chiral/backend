@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common'
 import { Milvus } from './milvus'
 import { Subscribe } from '@app/rmq/decorator'
-import { EntityCreateMsg, EntityRemoveMsg } from '@app/rmq/subscribe'
+import { ContentCreateMsg, ContentRemoveMsg } from '@app/rmq/subscribe'
 import {
   PositionType,
   QueryParams,
@@ -104,19 +104,19 @@ export class VecstoreService {
     return this.vecstore.delete(position, ids)
   }
 
-  @Subscribe('ai_vecstore', 'entity_create')
+  @Subscribe('ai_vecstore', 'content_create')
   protected async handleEntityCreate({
     type,
-    ids,
+    data,
     projectId,
-  }: EntityCreateMsg) {
+  }: ContentCreateMsg) {
     this.createMany(
       {
         collection_name: type,
         partition_name: PartitionEnum.undone,
       },
-      ids.map(
-        (id) =>
+      data.map(
+        ({ id }) =>
           new Doc({
             metadata: {
               id,
@@ -130,8 +130,8 @@ export class VecstoreService {
     )
   }
 
-  @Subscribe('ai_vecstore', 'entity_remove')
-  protected async handleEntityRemove({ type, ids }: EntityRemoveMsg) {
+  @Subscribe('ai_vecstore', 'content_remove')
+  protected async handleEntityRemove({ type, ids }: ContentRemoveMsg) {
     await this.deleteMany({ collection_name: type }, ids)
   }
 }

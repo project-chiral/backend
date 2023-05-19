@@ -3,7 +3,7 @@ import { PrismaService } from 'nestjs-prisma'
 import { CharaList } from './types'
 import { CharaListKey, UnresolvedCharasKey } from './const'
 import { Subscribe } from '@app/rmq/decorator'
-import { EntityRemoveMsg, EntityUpdateMsg } from '@app/rmq/subscribe'
+import { ContentRemoveMsg, ContentUpdateMsg } from '@app/rmq/subscribe'
 import { CharaOption, UnresolvedCharasDto } from './dto/unresolved.dto'
 import { CacheService } from '@app/cache'
 import { GraphService } from '@app/graph'
@@ -176,13 +176,13 @@ export class CharaService {
   /**
    * 角色信息更新后将角色表缓存失效
    */
-  @Subscribe('ai_chara', 'entity_update', ['chara'])
-  protected async handleCharaUpdate({ projectId }: EntityUpdateMsg) {
+  @Subscribe('ai_chara', 'content_update', ['chara'])
+  protected async handleCharaUpdate({ projectId }: ContentUpdateMsg) {
     await this.cache.del(CharaListKey({ projectId }))
   }
 
-  @Subscribe('ai_chara', 'entity_remove', ['event'])
-  protected async handleEventRemove({ ids }: EntityRemoveMsg) {
+  @Subscribe('ai_chara', 'content_remove', ['event'])
+  protected async handleEventRemove({ ids }: ContentRemoveMsg) {
     const unresolved = ids.map((eventId) => UnresolvedCharasKey({ eventId }))
     await this.cache.del(unresolved)
   }

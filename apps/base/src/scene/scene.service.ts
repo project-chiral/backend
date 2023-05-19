@@ -29,10 +29,16 @@ export class SceneService {
       },
     })
 
-    this.rmqService.publish('entity_create', ['scene'], {
+    this.rmqService.publish('content_create', ['scene'], {
       type: 'scene',
       projectId,
-      ids: [result.id],
+      data: [
+        {
+          id: result.id,
+          order: result.id,
+          name: result.name,
+        },
+      ],
     })
 
     return plainToInstance(SceneEntity, result)
@@ -44,14 +50,19 @@ export class SceneService {
       data: dto,
     })
 
-    this.rmqService.publish('entity_update', ['scene'], {
+    this.rmqService.publish('content_update', ['scene'], {
       type: 'scene',
       projectId: result.projectId,
-      ids: [id],
+      data: [
+        {
+          id: result.id,
+          name: result.name,
+        },
+      ],
     })
 
     if (dto.done !== undefined) {
-      this.rmqService.publish('entity_done', ['scene'], {
+      this.rmqService.publish('content_done', ['scene'], {
         type: 'scene',
         ids: [id],
         projectId: result.projectId,
@@ -67,7 +78,7 @@ export class SceneService {
       where: { id },
     })
 
-    this.rmqService.publish('entity_remove', ['scene'], {
+    this.rmqService.publish('content_remove', ['scene'], {
       type: 'scene',
       ids: [id],
       projectId: scene.projectId,

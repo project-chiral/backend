@@ -6,7 +6,7 @@ import {
   GetContentsQueryDto,
 } from './dto/get-content-query.dto'
 import { Subscribe } from '@app/rmq/decorator'
-import { EntityDoneMsg, EntityRemoveMsg } from '@app/rmq/subscribe'
+import { ContentDoneMsg, ContentRemoveMsg } from '@app/rmq/subscribe'
 import { ContentEntity } from './entities/content.entity'
 import { ContentKey } from './const'
 import { SchedulerRegistry } from '@nestjs/schedule'
@@ -100,8 +100,8 @@ export class ContentService {
     )
   }
 
-  @Subscribe('ai_content', 'entity_done')
-  protected async handleEntitiesDone({ type, ids, done }: EntityDoneMsg) {
+  @Subscribe('ai_content', 'content_done')
+  protected async handleEntitiesDone({ type, ids, done }: ContentDoneMsg) {
     const contents = await this.getBatch({ type, ids })
     const partition_name = done ? PartitionEnum.done : PartitionEnum.undone
     await this.vecstoreService.updateMany(
@@ -110,8 +110,8 @@ export class ContentService {
     )
   }
 
-  @Subscribe('ai_content', 'entity_remove')
-  protected async handleEntityRemove({ type, ids }: EntityRemoveMsg) {
+  @Subscribe('ai_content', 'content_remove')
+  protected async handleEntityRemove({ type, ids }: ContentRemoveMsg) {
     await Promise.all([
       this.vecstoreService.deleteMany({ collection_name: type }, ids),
       this.cache.del(

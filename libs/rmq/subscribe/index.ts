@@ -1,17 +1,17 @@
 import {
-  EntityCreateMsg,
-  EntityDoneMsg,
-  EntityRemoveMsg,
-  EntityUpdateMsg,
-} from './entity'
+  ContentCreateMsg,
+  ContentDoneMsg,
+  ContentRemoveMsg,
+  ContentUpdateMsg,
+} from './content'
 
 export type RmqSubscribeTypes = {
-  entity_create: EntityCreateMsg
-  entity_update: EntityUpdateMsg
-  entity_remove: EntityRemoveMsg
-  entity_done: EntityDoneMsg
+  content_create: ContentCreateMsg
+  content_update: ContentUpdateMsg
+  content_remove: ContentRemoveMsg
+  content_done: ContentDoneMsg
 }
 
 export type RmqTopic = keyof RmqSubscribeTypes
 
-export * from './entity'
+export * from './content'

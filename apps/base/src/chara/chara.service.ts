@@ -37,9 +37,15 @@ export class CharaService {
       },
     })
 
-    this.rmqService.publish('entity_create', ['chara'], {
+    this.rmqService.publish('content_create', ['chara'], {
       type: 'chara',
-      ids: [chara.id],
+      data: [
+        {
+          id: chara.id,
+          order: chara.id,
+          name: chara.name,
+        },
+      ],
       projectId,
     })
 
@@ -52,14 +58,19 @@ export class CharaService {
       data: dto,
     })
 
-    this.rmqService.publish('entity_update', ['chara'], {
+    this.rmqService.publish('content_update', ['chara'], {
       type: 'chara',
       projectId: result.projectId,
-      ids: [id],
+      data: [
+        {
+          id: result.id,
+          name: dto.name,
+        },
+      ],
     })
 
     if (dto.done !== undefined) {
-      this.rmqService.publish('entity_done', ['chara'], {
+      this.rmqService.publish('content_done', ['chara'], {
         type: 'chara',
         ids: [id],
         projectId: result.projectId,
@@ -75,7 +86,7 @@ export class CharaService {
       where: { id },
     })
 
-    this.rmqService.publish('entity_remove', ['chara'], {
+    this.rmqService.publish('content_remove', ['chara'], {
       type: 'chara',
       ids: [id],
       projectId: result.projectId,
