@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common'
 import { PrismaService } from 'nestjs-prisma'
-import { LangKey } from '../const'
+import { LangKey, LangMap } from '../const'
 import { ContentType } from '@app/rmq/types'
 import { ContentService } from '../content/content.service'
 import { CacheService } from '@app/cache'
@@ -44,10 +44,10 @@ export class BaseService {
         select: { lang: true },
       })
       await this.cache.setWithExpire(LangKey({ projectId }), lang)
-      return lang
+      return LangMap[lang]
     }
 
-    return lang
+    return LangMap[lang]
   }
 
   async content(type: ContentType, id: number) {
