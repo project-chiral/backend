@@ -1,2 +1,2 @@
-export const EventIdsKey = ({ projectId }: { projectId: number }) =>
-  `${projectId}/event/ids`
+export const DoneEventIdsKey = ({ projectId }: { projectId: number }) =>
+  `${projectId}/event/ids/done`

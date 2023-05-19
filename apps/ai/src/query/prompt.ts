@@ -1,7 +1,10 @@
 import { BaseParams } from '../dto/base-params.dto'
 
-export const QueryGeneratePrompt = ({ doc, lang }: BaseParams) =>
-  `Provide a question that can be answered by the given piece of document. The question needs to be in ${lang}.
+/**
+ * 阅读理解题
+ */
+export const CompPrompt = ({ doc, lang }: BaseParams) =>
+  `Provide a question that can be answered by the given piece of document. The question should be easy to understand and precise. The question needs to be in ${lang}.
 
   doc: David ate a apple and a banana today.
   query: What did David eat today?
@@ -11,3 +14,19 @@ export const QueryGeneratePrompt = ({ doc, lang }: BaseParams) =>
 
   doc: ${doc}
   query:`
+
+/**
+ * 选择题
+ */
+export const MCQPrompt = ({ doc, lang }: BaseParams) =>
+  `Provide a multiple choice question and its answer according to the given piece of document. There should be only one correct answer. The question needs to be in ${lang}.
+  
+  doc: Jesus, according to some biblical sources, was born in this town some two millennia ago in Bethlehem. The story begins with wise men who come to the city of Jerusalem after seeing a star that they interpreted as signaling the birth of a new king.
+
+  Question: Where was Jesus born? 
+  Choices: [@A:Jerusalem][@B:Palestine][@C:Bethlehem][@D:Tel-Aviv]
+  Answer: C
+  
+  doc: ${doc}
+  
+  Question: `

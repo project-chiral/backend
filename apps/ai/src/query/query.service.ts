@@ -3,13 +3,14 @@ import { GenerateQueriesDto } from './dto/generate.dto'
 import { PrismaService } from 'nestjs-prisma'
 import { ContentService } from '../content/content.service'
 import { BaseService } from '../base/base.service'
-import { QueryGeneratePrompt } from './prompt'
+import { MCQPrompt, CompPrompt } from './prompt'
 import { OpenAI } from 'langchain/llms/openai'
 import { CacheService } from '@app/cache'
-import { EventIdsKey } from './const'
+import { DoneEventIdsKey } from './const'
 import { Subscribe } from '@app/rmq/decorator'
-import { EntityCreateMsg, EntityRemoveMsg } from '@app/rmq/subscribe'
+import { ContentDoneMsg } from '@app/rmq/subscribe'
 import { DAY_MILLISECONDS } from '@app/utils'
+import { BaseParams } from '../dto/base-params.dto'
 
 @Injectable()
 export class QueryService {
@@ -24,16 +25,16 @@ export class QueryService {
     this.llm = new OpenAI({ modelName: 'gpt-3.5-turbo' })
   }
 
-  private async _getEventIds(projectId: number) {
-    const ids = await this.cache.get<number[]>(EventIdsKey({ projectId }))
+  private async _getDoneEventIds(projectId: number) {
+    const ids = await this.cache.get<number[]>(DoneEventIdsKey({ projectId }))
     if (!ids) {
       const events = await this.prismaService.event.findMany({
-        where: { projectId },
-        select: { id: true, done: true },
+        where: { projectId, done: true },
+        select: { id: true },
       })
       const ids = events.map(({ id }) => id)
       await this.cache.setWithExpire(
-        EventIdsKey({ projectId }),
+        DoneEventIdsKey({ projectId }),
         ids,
         DAY_MILLISECONDS
       )
@@ -44,7 +45,7 @@ export class QueryService {
   }
 
   private async _getRandomEventIds(projectId: number, n: number) {
-    const ids = await this._getEventIds(projectId)
+    const ids = await this._getDoneEventIds(projectId)
     const size = Math.min(n, ids.length)
 
     const result = new Set<number>()
@@ -55,20 +56,13 @@ export class QueryService {
     return [...result]
   }
 
-  private async _generate(projectId: number, doc: string) {
-    const lang = await this.baseService.lang(projectId)
-    const resp = await this.llm.call(
-      QueryGeneratePrompt({
-        doc,
-        lang,
-      })
-    )
-
-    return resp
-  }
-
-  async generate(projectId: number, { n }: GenerateQueriesDto) {
+  private async _generate(
+    projectId: number,
+    n: number,
+    prompt: (params: BaseParams) => string
+  ) {
     const ids = await this._getRandomEventIds(projectId, n)
+    const lang = await this.baseService.lang(projectId)
 
     const contents = (
       await this.contentService.getBatch({
@@ -78,19 +72,43 @@ export class QueryService {
     ).map(({ content }) => content)
 
     const result = await Promise.all(
-      contents.map((content) => this._generate(projectId, content))
+      contents.map(async (doc) => {
+        return await this.llm.call(
+          prompt({
+            doc,
+            lang,
+          })
+        )
+      })
     )
 
     return result
   }
 
-  @Subscribe('ai_query', 'entity_create', ['event'])
-  async handleEventCreate({ projectId }: EntityCreateMsg) {
-    await this.cache.del(EventIdsKey({ projectId }))
+  async comp(projectId: number, { n }: GenerateQueriesDto) {
+    return this._generate(projectId, n, CompPrompt)
   }
 
-  @Subscribe('ai_query', 'entity_remove', ['event'])
-  async handleEventRemove({ projectId }: EntityRemoveMsg) {
-    await this.cache.del(EventIdsKey({ projectId }))
+  async mcq(projectId: number, { n }: GenerateQueriesDto) {
+    return this._generate(projectId, n, MCQPrompt)
+  }
+
+  @Subscribe('ai_query', 'content_done', ['content'])
+  async handleEventDone({ projectId, ids, done }: ContentDoneMsg) {
+    const doneIds = await this._getDoneEventIds(projectId)
+    if (done) {
+      await this.cache.setWithExpire(
+        DoneEventIdsKey({ projectId }),
+        [...new Set([...doneIds, ...ids])],
+        DAY_MILLISECONDS
+      )
+    } else {
+      const idsSet = new Set(ids)
+      await this.cache.setWithExpire(
+        DoneEventIdsKey({ projectId }),
+        doneIds.filter((id) => !idsSet.has(id)),
+        DAY_MILLISECONDS
+      )
+    }
   }
 }

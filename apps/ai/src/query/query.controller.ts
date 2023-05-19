@@ -10,8 +10,13 @@ export class QueryController {
     private readonly utils: UtilsService
   ) {}
 
-  @Get('query')
-  generate(@Query() dto: GenerateQueriesDto) {
-    return this.queryService.generate(this.utils.getProjectId(), dto)
+  @Get('comp')
+  comp(@Query() dto: GenerateQueriesDto) {
+    return this.queryService.comp(this.utils.getProjectId(), dto)
+  }
+
+  @Get('mcq')
+  mcq(@Query() dto: GenerateQueriesDto) {
+    return this.queryService.mcq(this.utils.getProjectId(), dto)
   }
 }
