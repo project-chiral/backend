@@ -1,17 +1,9 @@
-import { Type } from 'class-transformer'
-import { RelationEnum, RelationType } from '../schema'
-import { ApiProperty } from '@nestjs/swagger'
+import { Relation } from 'cypher-query-builder'
 
-export class RelationEntity {
-  @ApiProperty({ enum: RelationEnum })
-  type: RelationType
-
-  @Type(() => Number)
-  from: number
-
-  @Type(() => Number)
-  to: number
-
-  @Type(() => Object)
-  props: Record<string, any>
+export class RelationEntity implements Relation {
+  identity: string
+  start: string
+  end: string
+  label: string
+  properties: any
 }

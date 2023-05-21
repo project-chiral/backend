@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common'
 import { plainToInstance } from 'class-transformer'
-import { NodeIdDto } from './dto/graph/node-id.dto'
 import { NodeEntity } from './entities/node.entity'
 import { RelationEntity } from './entities/relation.entity'
 import { CypherService } from './cypher/cypher.service'
@@ -11,7 +10,6 @@ import {
   ContentRemoveMsg,
   ContentUpdateMsg,
 } from '@app/rmq/index'
-import { NodeRelationsEntity } from './entities/node-relations.entity'
 import { GetTreeRootQueryDto } from './dto/tree/get-tree-root-query.dto'
 import { TreeSchema } from './tree-schema'
 import { NodeIdsDto } from './dto/graph/node-ids.dto'
@@ -21,55 +19,71 @@ import { TreeIdDto } from './dto/tree/tree-id.dto'
 import { ConnectTreesDto } from './dto/tree/connect-trees.dto'
 import { DisconnectTreesDto } from './dto/tree/disconnect-trees.dto'
 import { MergeNodesDto } from './dto/graph/merge-nodes.dto'
-
-const RelationReturn = (name = 'r') => `
-type(${name}) as type,
-startnode(${name}).id as from,
-endnode(${name}).id as to,
-properties(${name}) as props`
+import { GetRelationsDto } from './dto/graph/get-relations.dto'
+import { GetRelationsBatchDto } from './dto/graph/get-relations-batch.dto'
 
 @Injectable()
 export class GraphService {
   constructor(private readonly cypherService: CypherService) {}
 
-  async getNodeRelations({ type, id }: NodeIdDto) {
-    const [fromQuery, toQuery] = await Promise.all([
-      this.cypherService.execute`
-      match (n)-[from]->(:${type} ${{ id }})
-      return
-        type(from) as type,
-        n.id as id
-      `.run(),
-      this.cypherService.execute`
-      match (:${type} ${{ id }})-[to]->(n)
-      return
-        type(to) as type,
-        n.id as id
-      `.run(),
-    ])
-
-    const result = new NodeRelationsEntity()
-    for (const { type, id } of fromQuery) {
-      result[type]?.from.push(id)
-    }
-    for (const { type, id } of toQuery) {
-      result[type]?.to.push(id)
+  async getRelatedNodes({ type, relType, id }: GetRelationsDto) {
+    if (!relType) {
+      const query = await this.cypherService.execute`
+      match (:${type} ${{ id }})--(n)
+      return n
+      `.run()
+      return plainToInstance(
+        NodeEntity,
+        query.map(({ n }) => n)
+      )
     }
 
-    return result
+    const { from } = RelationSchema[relType]
+    let query: Record<string, any>[]
+
+    if (from === type) {
+      query = await this.cypherService.execute`
+      match (:${type} ${{ id }})-[:${relType}]->(n)
+      return n
+      `.run()
+    } else {
+      query = await this.cypherService.execute`
+      match (n)-[:${relType}]->(:${type} ${{ id }})
+      return n
+      `.run()
+    }
+
+    return plainToInstance(
+      NodeEntity,
+      query.map(({ n }) => n)
+    )
   }
 
-  async getRelation({ type, from, to }: RelationIdDto) {
-    const { from: fromType, to: toType } = RelationSchema[type]
+  async getRelations({ type, id, relType }: GetRelationsDto) {
+    const relLabel = relType ? `:${relType}` : ''
     const query = await this.cypherService.execute`
-    match 
-      (from:${fromType} ${{ id: from }})
-      -[r:${type}]->
-      (to:${toType} ${{ id: to }})
-    return ${RelationReturn()}
+    match (:${type} ${{ id }})-[r${relLabel}]-()
+    return r
     `.run()
 
-    return plainToInstance(RelationEntity, query)
+    return plainToInstance(
+      RelationEntity,
+      query.map(({ r }) => r)
+    )
+  }
+
+  async getRelationsBatch({ type, ids, relType }: GetRelationsBatchDto) {
+    const relLabel = relType ? `:${relType}` : ''
+    const query = await this.cypherService.execute`
+    unwind ${ids} as id
+    match (:${type} {id:id})-[r${relLabel}]-()
+    return r
+    `.run()
+
+    return plainToInstance(
+      RelationEntity,
+      query.map(({ r }) => r)
+    )
   }
 
   async createRelation({ type, from, to }: RelationIdDto) {
@@ -79,7 +93,7 @@ export class GraphService {
       (from:${fromType} ${{ id: from }}),
       (to:${toType} ${{ id: to }})
     merge (from)-[r:${type}]->(to)
-    return ${RelationReturn()}
+    return r
     `.run()
 
     return plainToInstance(RelationEntity, query)
@@ -93,7 +107,7 @@ export class GraphService {
       (from:${fromType} {id:data.from}), 
       (to:${toType} {id:data.to})
     merge (from)-[r:${type}]->(to)
-    return ${RelationReturn()}
+    return r
     `.run()
 
     return plainToInstance(RelationEntity, query)
@@ -107,7 +121,7 @@ export class GraphService {
       -[r:${type}]->
       (to:${toType} ${{ id: to }})
     delete r
-    return ${RelationReturn()}
+    return r
     `.run()
 
     return plainToInstance(RelationEntity, query)
@@ -122,7 +136,7 @@ export class GraphService {
       -[r:${type}]->
       (to:${toType} {id:data.to})
     delete r
-    return ${RelationReturn()}
+    return r
     `.run()
 
     return plainToInstance(RelationEntity, query)
@@ -143,11 +157,13 @@ export class GraphService {
   }
 
   async removeNodes({ type, ids }: NodeIdsDto) {
-    await this.cypherService.execute`
+    const query = await this.cypherService.execute`
     match (n:${type})
     where n.id in ${ids}
     detach delete n
     `.run()
+
+    return plainToInstance(NodeEntity, query)
   }
 
   // ---------------------------------- tree ----------------------------------
