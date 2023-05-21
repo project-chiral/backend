@@ -40,9 +40,9 @@ export const SummarizeDescPrompt = ({
   abstraction,
   keyword,
 }: BaseParams & SummarizeDescParams) =>
-  `I want you to act as a text summarizer that can condense historical texts into informative, concise summaries. The summarizer should output summaries that are no longer than a specified length of ${length}. The summarizer should strive to accurately capture specific details such as names, dates, and locations in the original text. The summary should be generated around a set of specified keywords: ${keyword.join(
+  `I want you to act as a text summarizer that can condense texts into informative, concise summaries. The summarizer should output summaries that are no longer than a specified length of ${length}. The summarizer should strive to accurately capture specific details such as names, dates, and locations in the original text. The summary should be generated around a set of specified keywords: ${keyword.join(
     ','
-  )}, which represents a group of character names. The summarizer should maintain a professional tone and achieve a minimum level of abstraction, indicated by ${abstraction}, by limiting the percentage of directly copied sentences from the original text. The input texts may include subjective or literary descriptions. The output format for the summaries should be a single paragraph. The summaries needs to be in ${lang}.
+  )}. The summarizer should maintain a professional tone and achieve a minimum level of abstraction, indicated by ${abstraction}, by limiting the percentage of directly copied sentences from the original text. The input texts may include subjective or literary descriptions. The output format for the summaries should be a single paragraph. The summaries needs to be in ${lang}.
 
   [document]
   ${doc}
