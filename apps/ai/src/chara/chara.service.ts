@@ -118,7 +118,7 @@ export class CharaService {
       }
     }
 
-    await this.graphService.removeRelation({
+    await this.graphService.removeRelations({
       type: PARTICIPATED_IN,
       to: eventId,
     })
@@ -131,7 +131,7 @@ export class CharaService {
   }
 
   private async _handleResolved(eventId: number, ids: number[]) {
-    await this.graphService.createRelations({
+    await this.graphService.createRelationBatch({
       type: PARTICIPATED_IN,
       ids: ids.map((id) => ({
         from: id,

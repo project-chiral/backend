@@ -51,16 +51,13 @@ export class BaseService {
   }
 
   async content(type: ContentType, id: number) {
-    return this.contentService.get({ type, id })
+    return this.contentService.get(type, id)
   }
 
   async baseParams(type: ContentType, id: number) {
     const projectId = await this._getProjectId(type, id)
     const [{ content: doc }, lang] = await Promise.all([
-      this.contentService.get({
-        type,
-        id,
-      }),
+      this.contentService.get(type, id),
       this.lang(projectId),
     ])
 

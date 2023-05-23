@@ -30,7 +30,8 @@ export class ProjectController {
    */
   @Get()
   async get() {
-    return this.projectService.get(this.utils.getProjectId())
+    const projectId = this.utils.getProjectId()
+    return this.projectService.get(projectId)
   }
 
   /**
@@ -38,7 +39,8 @@ export class ProjectController {
    */
   @Put()
   async update(@Body() dto: UpdateProjectDto) {
-    return this.projectService.update(this.utils.getProjectId(), dto)
+    const projectId = this.utils.getProjectId()
+    return this.projectService.update(projectId, dto)
   }
 
   /**
@@ -46,7 +48,8 @@ export class ProjectController {
    */
   @Delete()
   async remove() {
-    return this.projectService.remove(this.utils.getProjectId())
+    const projectId = this.utils.getProjectId()
+    return this.projectService.remove(projectId)
   }
 
   // -------------------------------- workspace -------------------------------
@@ -56,7 +59,8 @@ export class ProjectController {
    */
   @Get('workspace')
   async getWorkspace() {
-    return this.projectService.getWorkspace(this.utils.getProjectId())
+    const projectId = this.utils.getProjectId()
+    return this.projectService.getWorkspace(projectId)
   }
 
   /**
@@ -64,7 +68,8 @@ export class ProjectController {
    */
   @Put('workspace')
   async updateWorkspace(@Body() dto: UpdateWorkspaceDto) {
-    return this.projectService.updateWorkspace(this.utils.getProjectId(), dto)
+    const projectId = this.utils.getProjectId()
+    return this.projectService.updateWorkspace(projectId, dto)
   }
 
   // -------------------------------- settings --------------------------------
@@ -74,7 +79,8 @@ export class ProjectController {
    */
   @Get('settings')
   async getSettings() {
-    return this.projectService.getSettings(this.utils.getProjectId())
+    const projectId = this.utils.getProjectId()
+    return this.projectService.getSettings(projectId)
   }
 
   /**
@@ -82,6 +88,7 @@ export class ProjectController {
    */
   @Put('settings')
   async updateSettings(@Body() dto: UpdateSettingsDto) {
-    return this.projectService.updateSettings(this.utils.getProjectId(), dto)
+    const projectId = this.utils.getProjectId()
+    return this.projectService.updateSettings(projectId, dto)
   }
 }

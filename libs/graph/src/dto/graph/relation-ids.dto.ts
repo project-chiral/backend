@@ -1,18 +1,16 @@
 import { ApiProperty } from '@nestjs/swagger'
-import { IsEnum, IsInt, IsOptional, ValidateNested } from 'class-validator'
+import { IsEnum, IsInt, ValidateNested } from 'class-validator'
 import { RelationEnum, RelationType } from '../../schema'
 import { Type } from 'class-transformer'
 
 class Relation {
   @IsInt()
-  @IsOptional()
   @Type(() => Number)
-  from?: number
+  from: number
 
   @IsInt()
-  @IsOptional()
   @Type(() => Number)
-  to?: number
+  to: number
 }
 
 export class RelationIdsDto {

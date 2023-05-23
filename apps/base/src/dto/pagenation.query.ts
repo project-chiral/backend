@@ -1,7 +1,7 @@
 import { Type } from 'class-transformer'
 import { IsInt, Min, IsOptional } from 'class-validator'
 
-export class PagenationDto {
+export class PagenationQuery {
   @IsInt()
   @Min(0)
   @IsOptional()

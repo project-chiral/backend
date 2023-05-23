@@ -3,30 +3,29 @@ import { plainToInstance } from 'class-transformer'
 import { NodeEntity } from './entities/node.entity'
 import { RelationEntity } from './entities/relation.entity'
 import { CypherService } from './cypher/cypher.service'
-import { RelationSchema } from './schema'
+import { RelationSchema, RelationType } from './schema'
 import {
   Subscribe,
   ContentCreateMsg,
   ContentRemoveMsg,
   ContentUpdateMsg,
 } from '@app/rmq/index'
-import { GetTreeRootQueryDto } from './dto/tree/get-tree-root-query.dto'
-import { TreeSchema } from './tree-schema'
+import { TreeSchema, TreeType } from './tree-schema'
 import { NodeIdsDto } from './dto/graph/node-ids.dto'
 import { RelationIdDto } from './dto/graph/relation-id.dto'
 import { RelationIdsDto } from './dto/graph/relation-ids.dto'
 import { TreeIdDto } from './dto/tree/tree-id.dto'
-import { ConnectTreesDto } from './dto/tree/connect-trees.dto'
-import { DisconnectTreesDto } from './dto/tree/disconnect-trees.dto'
 import { MergeNodesDto } from './dto/graph/merge-nodes.dto'
-import { GetRelationsDto } from './dto/graph/get-relations.dto'
-import { GetRelationsBatchDto } from './dto/graph/get-relations-batch.dto'
+import { TreeEntity } from './entities/tree.entity'
+import { NodeIdDto } from './dto/graph/node-id.dto'
+import { RemoveRelationsDto } from './dto/graph/remove-relations.dto'
+import { PagenationQuery } from 'apps/base/src/dto/pagenation.query'
 
 @Injectable()
 export class GraphService {
   constructor(private readonly cypherService: CypherService) {}
 
-  async getRelatedNodes({ type, relType, id }: GetRelationsDto) {
+  async getRelatedNodes({ type, id }: NodeIdDto, relType?: RelationType) {
     if (!relType) {
       const query = await this.cypherService.execute`
       match (:${type} ${{ id }})--(n)
@@ -59,7 +58,7 @@ export class GraphService {
     )
   }
 
-  async getRelations({ type, id, relType }: GetRelationsDto) {
+  async getRelations({ type, id }: NodeIdDto, relType?: RelationType) {
     const relLabel = relType ? `:${relType}` : ''
     const query = await this.cypherService.execute`
     match (:${type} ${{ id }})-[r${relLabel}]-()
@@ -72,7 +71,7 @@ export class GraphService {
     )
   }
 
-  async getRelationsBatch({ type, ids, relType }: GetRelationsBatchDto) {
+  async getRelationsBatch({ type, ids }: NodeIdsDto, relType?: RelationType) {
     const relLabel = relType ? `:${relType}` : ''
     const query = await this.cypherService.execute`
     unwind ${ids} as id
@@ -99,7 +98,7 @@ export class GraphService {
     return plainToInstance(RelationEntity, query)
   }
 
-  async createRelations({ type, ids }: RelationIdsDto) {
+  async createRelationBatch({ type, ids }: RelationIdsDto) {
     const { from: fromType, to: toType } = RelationSchema[type]
     const query = await this.cypherService.execute`
     unwind ${ids} as data
@@ -113,7 +112,7 @@ export class GraphService {
     return plainToInstance(RelationEntity, query)
   }
 
-  async removeRelation({ from, to, type }: RelationIdDto) {
+  async removeRelations({ from, to, type }: RemoveRelationsDto) {
     const { from: fromType, to: toType } = RelationSchema[type]
     const query = await this.cypherService.execute`
     match 
@@ -127,7 +126,7 @@ export class GraphService {
     return plainToInstance(RelationEntity, query)
   }
 
-  async removeRelations({ type, ids }: RelationIdsDto) {
+  async removeRelationsBatch({ type, ids }: RelationIdsDto) {
     const { from: fromType, to: toType } = RelationSchema[type]
     const query = await this.cypherService.execute`
     unwind ${ids} as data
@@ -168,18 +167,60 @@ export class GraphService {
 
   // ---------------------------------- tree ----------------------------------
 
+  async getTrees(projectId: number, type: TreeType) {
+    const rootIds = (await this.getTreeRoots(projectId, type, {})).map(
+      ({ properties: { id } }) => id
+    )
+    const relType = TreeSchema(type)
+    const query = await this.cypherService.execute`
+    unwind ${rootIds} as id
+    match path = (:${type} {id:id})-[:${relType} *0..]->(:${type})
+    with collect(path) as paths
+    call apoc.convert.toTree(paths, false)
+    yield value
+    return value as tree
+    `.run()
+
+    return plainToInstance(
+      TreeEntity,
+      query.map(({ tree }) => tree)
+    )
+  }
+
+  async searchTrees(projectId: number, type: TreeType, input: string) {
+    const rootIds = (await this.getTreeRoots(projectId, type, {})).map(
+      ({ properties: { id } }) => id
+    )
+    const relType = TreeSchema(type)
+    const query = await this.cypherService.execute`
+    unwind ${rootIds} as id
+    match path = (:${type} {id:id})-[:${relType} *0..]->(n:${type})
+    where n.name contains '${input}'
+    with collect(path) as paths
+    call apoc.convert.toTree(paths, false)
+    yield value
+    return value as tree
+    `.run()
+
+    return plainToInstance(
+      TreeEntity,
+      query.map(({ tree }) => tree)
+    )
+  }
+
   async getTreeRoots(
     projectId: number,
-    { type, page = 0, size }: GetTreeRootQueryDto
+    type: TreeType,
+    { page = 0, size }: PagenationQuery
   ) {
     const relType = TreeSchema(type)
     const query = await this.cypherService.execute`
-    match (n:${relType} {projectId:${projectId}})
-    where not ()-[:${type}]->(n)
-    order by n.order
+    match (n:${type} {projectId:${projectId}})
+    where not ()-[:${relType}]->(n)
     return n
+    order by n.order
     skip ${page * (size ?? 0)}
-    ${size && `limit ${size}`}
+    ${size ? `limit ${size}` : ''}
     `.run()
 
     return plainToInstance(
@@ -240,7 +281,7 @@ export class GraphService {
     )
   }
 
-  async connectTrees({ type, from, to }: ConnectTreesDto) {
+  async connectTrees({ type, id }: TreeIdDto, to: number[]) {
     const relType = TreeSchema(type)
     // 删除子节点原有的父节点
     const query = await this.cypherService.execute`
@@ -253,7 +294,7 @@ export class GraphService {
     // 连接子节点到新的父节点
     await this.cypherService.execute`
     unwind ${to} as id
-    optional match (from:${type} {id:${from}}), (to:${type} {id:id})
+    optional match (from:${type} {id:${id}}), (to:${type} {id:id})
     merge (from)-[:${relType}]->(to)
     `.run()
 
@@ -263,7 +304,7 @@ export class GraphService {
     )
   }
 
-  async disconnectTrees({ type, to }: DisconnectTreesDto) {
+  async disconnectTrees(type: TreeType, to: number[]) {
     const relType = TreeSchema(type)
     const query = await this.cypherService.execute`
     unwind ${to} as id
@@ -280,14 +321,6 @@ export class GraphService {
       query.map(({ n }) => n)
     )
   }
-
-  // async removeTree({ type, id }: TreeIdDto) {
-  //   const relType = TreeSchema(type)
-  //   await this.cypherService.execute`
-  //   match (n:${type} ${{ id }})-[r:${relType}*]->(m)
-  //   detach delete n, m
-  //   `.run()
-  // }
 
   // ----------------------------------- subscribe ----------------------------------
 

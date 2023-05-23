@@ -12,6 +12,7 @@ import { CreateCharaDto } from './dto/create-chara.dto'
 import { UpdateCharaDto } from './dto/update-chara.dto'
 import { ApiTags } from '@nestjs/swagger'
 import { UtilsService } from '@app/utils'
+import { IdParams } from '../dto/id.param'
 
 @ApiTags('chara')
 @Controller('chara')
@@ -21,28 +22,30 @@ export class CharaController {
     private readonly utils: UtilsService
   ) {}
 
-  @Post()
-  create(@Body() dto: CreateCharaDto) {
-    return this.charaService.create(this.utils.getProjectId(), dto)
-  }
-
   @Get()
   getAll() {
-    return this.charaService.getAll(this.utils.getProjectId())
+    const projectId = this.utils.getProjectId()
+    return this.charaService.getAll(projectId)
   }
 
   @Get(':id')
-  get(@Param('id') id: number) {
+  get(@Param() { id }: IdParams) {
     return this.charaService.get(id)
   }
 
+  @Post()
+  create(@Body() dto: CreateCharaDto) {
+    const projectId = this.utils.getProjectId()
+    return this.charaService.create(projectId, dto)
+  }
+
   @Patch(':id')
-  update(@Param('id') id: number, @Body() dto: UpdateCharaDto) {
+  update(@Param() { id }: IdParams, @Body() dto: UpdateCharaDto) {
     return this.charaService.update(id, dto)
   }
 
   @Delete(':id')
-  remove(@Param('id') id: number) {
+  remove(@Param() { id }: IdParams) {
     return this.charaService.remove(id)
   }
 

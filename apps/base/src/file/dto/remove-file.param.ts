@@ -1,6 +1,6 @@
 import { IsString } from 'class-validator'
 
-export class RemoveFileDto {
+export class RemoveFileParams {
   @IsString()
   position: string
 }

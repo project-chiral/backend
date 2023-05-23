@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common'
-import { RemoveFileDto } from './dto/remove-file.dto'
 import { UploadFileDto } from './dto/upload-file.dto'
 import hasha from 'hasha'
 import { extension } from 'mime-types'
@@ -38,7 +37,7 @@ export class FileService {
     return positionWithExt
   }
 
-  async remove(projectId: number, { position }: RemoveFileDto) {
+  async remove(projectId: number, position: string) {
     const filePath = path.join(filesPath, `${projectId}`, position)
     await rm(`${filePath}*`, { recursive: true })
     return position

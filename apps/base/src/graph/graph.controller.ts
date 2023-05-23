@@ -1,34 +1,48 @@
 import { GraphService } from '@app/graph'
-import { GetRelationsBatchDto } from '@app/graph/dto/graph/get-relations-batch.dto'
-import { GetRelationsDto } from '@app/graph/dto/graph/get-relations.dto'
 import { RelationIdDto } from '@app/graph/dto/graph/relation-id.dto'
-import { RelationIdsDto } from '@app/graph/dto/graph/relation-ids.dto'
-import { Body, Controller, Delete, Get, Put, Query } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Put,
+  Query,
+} from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
+import { GetRelationsParams } from './dto/get-relations.param'
+import { NodeIdDto } from '@app/graph/dto/graph/node-id.dto'
+import { GetRelationsBatchQuery } from './dto/get-relations-batch.query'
+import { RemoveRelationsDto } from '@app/graph/dto/graph/remove-relations.dto'
 
 @ApiTags('graph')
 @Controller('graph')
 export class GraphController {
   constructor(private readonly graphService: GraphService) {}
 
-  @Get('node')
-  async getRelatedNodes(@Query() dto: GetRelationsDto) {
-    return this.graphService.getRelatedNodes(dto)
-  }
-
   @Get('batch')
-  async getRelationsBatch(@Query() dto: GetRelationsBatchDto) {
+  async getRelationsBatch(@Query() dto: GetRelationsBatchQuery) {
     return this.graphService.getRelationsBatch(dto)
   }
 
-  @Get()
-  async getRelations(@Query() dto: GetRelationsDto) {
-    return this.graphService.getRelations(dto)
+  @Get(':type/:id/node')
+  async getAllRelatedNodes(@Param() { type, id }: NodeIdDto) {
+    return this.graphService.getRelatedNodes({ type, id })
   }
 
-  @Put('batch')
-  async createRelations(@Body() dto: RelationIdsDto) {
-    return this.graphService.createRelations(dto)
+  @Get(':type/:id/:relType/node')
+  async getRelatedNodes(@Param() { type, id, relType }: GetRelationsParams) {
+    return this.graphService.getRelatedNodes({ type, id }, relType)
+  }
+
+  @Get(':type/:id/:relType')
+  async getRelations(@Param() { type, id, relType }: GetRelationsParams) {
+    return this.graphService.getRelations({ type, id }, relType)
+  }
+
+  @Get(':type/:id')
+  async getAllRelations(@Param() { type, id }: NodeIdDto) {
+    return this.graphService.getRelations({ type, id })
   }
 
   @Put()
@@ -36,13 +50,8 @@ export class GraphController {
     return this.graphService.createRelation(dto)
   }
 
-  @Delete('batch')
-  async removeRelations(@Body() dto: RelationIdsDto) {
-    return this.graphService.removeRelations(dto)
-  }
-
   @Delete()
-  async removeRelation(@Body() dto: RelationIdDto) {
-    return this.graphService.removeRelation(dto)
+  async removeRelation(@Query() query: RemoveRelationsDto) {
+    return this.graphService.removeRelations(query)
   }
 }

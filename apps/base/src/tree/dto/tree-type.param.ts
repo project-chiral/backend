@@ -1,14 +1,9 @@
-import { IsEnum, IsInt } from 'class-validator'
-import { Type } from 'class-transformer'
 import { TreeEnum, TreeType } from '@app/graph/tree-schema'
 import { ApiProperty } from '@nestjs/swagger'
+import { IsEnum } from 'class-validator'
 
-export class TreeIdDto {
+export class TreeTypeParams {
   @ApiProperty({ enum: TreeEnum })
   @IsEnum(TreeEnum)
   type: TreeType
-
-  @IsInt()
-  @Type(() => Number)
-  id: number
 }

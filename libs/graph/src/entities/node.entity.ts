@@ -2,6 +2,7 @@ import { ApiProperty } from '@nestjs/swagger'
 import { Type } from 'class-transformer'
 import { NodeEnum, NodeType } from '../schema'
 import { Node } from 'cypher-query-builder'
+
 export class NodeData {
   @Type(() => Number)
   id: number
@@ -18,7 +19,7 @@ export class NodeData {
 export class NodeEntity implements Node<NodeData> {
   identity: string
 
-  @ApiProperty({ enum: NodeEnum })
+  @ApiProperty({ enum: NodeEnum, isArray: true })
   labels: NodeType[]
 
   properties: NodeData

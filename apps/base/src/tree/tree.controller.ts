@@ -1,11 +1,23 @@
 import { GraphService } from '@app/graph'
-import { ConnectTreesDto } from '@app/graph/dto/tree/connect-trees.dto'
-import { DisconnectTreesDto } from '@app/graph/dto/tree/disconnect-trees.dto'
-import { GetTreeRootQueryDto } from '@app/graph/dto/tree/get-tree-root-query.dto'
+import { DisconnectTreesQuery } from '@app/graph/dto/tree/disconnect-trees.query'
 import { TreeIdDto } from '@app/graph/dto/tree/tree-id.dto'
 import { UtilsService } from '@app/utils'
-import { Body, Controller, Delete, Get, Put, Query } from '@nestjs/common'
+import {
+  Body,
+  Controller,
+  Delete,
+  Get,
+  Param,
+  Put,
+  Query,
+} from '@nestjs/common'
+import { ApiTags } from '@nestjs/swagger'
+import { PagenationQuery } from '../dto/pagenation.query'
+import { TreeTypeParams } from './dto/tree-type.param'
+import { SearchTreeParams } from './dto/search-tree.param'
+import { ConnectTreesDto } from './dto/connect-trees.dto'
 
+@ApiTags('tree')
 @Controller('tree')
 export class TreeController {
   constructor(
@@ -13,39 +25,54 @@ export class TreeController {
     private readonly utils: UtilsService
   ) {}
 
-  @Get('root')
-  async getTreeRoots(@Query() dto: GetTreeRootQueryDto) {
+  @Get(':type/root')
+  async getTreeRoots(
+    @Param() { type }: TreeTypeParams,
+    @Query() query: PagenationQuery
+  ) {
     const projectId = this.utils.getProjectId()
-    return this.graphService.getTreeRoots(projectId, dto)
+    return this.graphService.getTreeRoots(projectId, type, query)
   }
 
-  @Get('sup')
-  async getSupTree(@Query() dto: TreeIdDto) {
-    return this.graphService.getSupTree(dto)
+  @Get(':type/:id/sup/all')
+  async getAllSupTrees(@Param() params: TreeIdDto) {
+    return this.graphService.getAllSupTrees(params)
   }
 
-  @Get('sup/all')
-  async getAllSupTrees(@Query() dto: TreeIdDto) {
-    return this.graphService.getAllSupTrees(dto)
+  @Get(':type/:id/sup')
+  async getSupTree(@Param() params: TreeIdDto) {
+    return this.graphService.getSupTree(params)
   }
 
-  @Get('sub')
-  async getSubTrees(@Query() dto: TreeIdDto) {
-    return this.graphService.getSubTrees(dto)
+  @Get(':type/:id/sub')
+  async getSubTrees(@Param() params: TreeIdDto) {
+    return this.graphService.getSubTrees(params)
   }
 
-  @Get('sub/all')
-  async getAllSubTrees(@Query() dto: TreeIdDto) {
-    return this.graphService.getAllSubTrees(dto)
+  @Get(':type/:id/sub/all')
+  async getAllSubTrees(@Param() params: TreeIdDto) {
+    return this.graphService.getAllSubTrees(params)
+  }
+
+  @Get(':type/search/:input')
+  async searchTree(@Param() { type, input }: SearchTreeParams) {
+    const projectId = this.utils.getProjectId()
+    return this.graphService.searchTrees(projectId, type, input)
+  }
+
+  @Get(':type/tree')
+  async getTree(@Param() { type }: TreeTypeParams) {
+    const projectId = this.utils.getProjectId()
+    return this.graphService.getTrees(projectId, type)
   }
 
   @Put('connect')
-  async connectTrees(@Body() dto: ConnectTreesDto) {
-    return this.graphService.connectTrees(dto)
+  async connectTrees(@Body() { type, id, to }: ConnectTreesDto) {
+    return this.graphService.connectTrees({ type, id }, to)
   }
 
   @Delete('disconnect')
-  async disconnectTrees(@Body() dto: DisconnectTreesDto) {
-    return this.graphService.disconnectTrees(dto)
+  async disconnectTrees(@Query() { type, to }: DisconnectTreesQuery) {
+    return this.graphService.disconnectTrees(type, to)
   }
 }

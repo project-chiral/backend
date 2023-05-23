@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Param,
   Post,
   Put,
   UploadedFile,
@@ -12,7 +13,7 @@ import { ApiTags } from '@nestjs/swagger'
 import { FileInterceptor } from '@nestjs/platform-express'
 import { ApiConsumes } from '@nestjs/swagger'
 import { UploadFileDto } from './dto/upload-file.dto'
-import { RemoveFileDto } from './dto/remove-file.dto'
+import { RemoveFileParams } from './dto/remove-file.param'
 import { UploadTempFileDto } from './dto/upload-temp-file.dto'
 import { SaveTempFileDto } from './dto/save-temp-file.dto'
 import { UtilsService } from '@app/utils'
@@ -32,12 +33,14 @@ export class FileController {
     @Body() dto: UploadFileDto,
     @UploadedFile('file') file: Express.Multer.File
   ) {
-    return this.fileService.upload(this.utils.getProjectId(), { ...dto, file })
+    const projectId = this.utils.getProjectId()
+    return this.fileService.upload(projectId, { ...dto, file })
   }
 
-  @Delete()
-  remove(@Body() dto: RemoveFileDto) {
-    return this.fileService.remove(this.utils.getProjectId(), dto)
+  @Delete(':position')
+  remove(@Param() { position }: RemoveFileParams) {
+    const projectId = this.utils.getProjectId()
+    return this.fileService.remove(projectId, position)
   }
 
   @Post('temp')

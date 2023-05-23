@@ -1,10 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common'
 import { VecstoreService } from '../vecstore/vecstore.service'
 import { UpdateContentDto } from './dto/update-content.dto'
-import {
-  GetContentQueryDto,
-  GetContentsQueryDto,
-} from './dto/get-content-query.dto'
+import { GetContentsQueryDto } from './dto/get-content-query.dto'
 import { Subscribe } from '@app/rmq/decorator'
 import { ContentDoneMsg, ContentRemoveMsg } from '@app/rmq/subscribe'
 import { ContentEntity } from './entities/content.entity'
@@ -15,6 +12,7 @@ import { CacheService } from '@app/cache'
 import { SearchContentQueryDto } from './dto/search-content-query.dto'
 import { PartitionEnum } from '../vecstore/schema'
 import { DAY_MILLISECONDS } from '@app/utils'
+import { ContentType } from '@app/rmq/types'
 
 @Injectable()
 export class ContentService {
@@ -24,7 +22,7 @@ export class ContentService {
     private readonly cache: CacheService
   ) {}
 
-  async get({ type, id }: GetContentQueryDto) {
+  async get(type: ContentType, id: number) {
     const key = ContentKey({
       type,
       id,
@@ -49,7 +47,7 @@ export class ContentService {
   }
 
   async getBatch({ type, ids }: GetContentsQueryDto) {
-    return Promise.all(ids.map((id) => this.get({ type, id })))
+    return Promise.all(ids.map((id) => this.get(type, id)))
   }
 
   async search(projectId: number, { type, query, k }: SearchContentQueryDto) {
@@ -63,7 +61,7 @@ export class ContentService {
   }
 
   async update({ type, id, ...data }: UpdateContentDto) {
-    const content = await this.get({ type, id })
+    const content = await this.get(type, id)
     const result = plainToInstance(ContentEntity, {
       ...content,
       ...data,

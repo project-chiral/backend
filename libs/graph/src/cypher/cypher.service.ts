@@ -38,7 +38,7 @@ export class CypherService extends Connection implements OnApplicationShutdown {
       query += i % 2 === 0 ? strs[pos] : format(args[pos])
     }
 
-    // console.log(query)
+    console.log(query)
 
     return this.raw(query)
   }

@@ -10,14 +10,15 @@ import {
 } from '@nestjs/common'
 import { ApiTags } from '@nestjs/swagger'
 import { CreateEventDto } from './dto/event/create-event.dto'
-import { GetEventsByRangeQueryDto } from './dto/event/get-events-by-range-query.dto'
+import { GetByRangeQuery } from './dto/event/get-by-range.query'
 import { UpdateEventDto } from './dto/event/update-event.dto'
 import { CreateTodoDto } from './dto/todo/create-todo.dto'
 import { UpdateTodoDto } from './dto/todo/update-todo.dto'
 import { EventService } from './event.service'
-import { GetEventBatchDto } from './dto/event/get-event-batch.dto'
 import { UtilsService } from '@app/utils'
-import { PagenationDto } from '../dto/pagenation.dto'
+import { PagenationQuery } from '../dto/pagenation.query'
+import { IdParams } from '../dto/id.param'
+import { IdBatchQuery } from '../dto/id-batch.query'
 
 @ApiTags('event')
 @Controller('event')
@@ -30,23 +31,20 @@ export class EventController {
   // ---------------------------------- event ---------------------------------
 
   @Get('batch')
-  async getBatch(@Query() { ids }: GetEventBatchDto) {
+  async getBatch(@Query() { ids }: IdBatchQuery) {
     return this.eventService.getBatch(ids)
   }
 
   @Get('list')
-  async getAll(@Query() dto: PagenationDto) {
-    return this.eventService.getAll(this.utils.getProjectId(), dto)
+  async getAll(@Query() dto: PagenationQuery) {
+    const projectId = this.utils.getProjectId()
+    return this.eventService.getAll(projectId, dto)
   }
 
   @Get('list/range')
-  getByRange(@Query() { unit, start, end }: GetEventsByRangeQueryDto) {
-    return this.eventService.getByRange(
-      this.utils.getProjectId(),
-      unit,
-      start,
-      end
-    )
+  getByRange(@Query() { unit, start, end }: GetByRangeQuery) {
+    const projectId = this.utils.getProjectId()
+    return this.eventService.getByRange(projectId, unit, start, end)
   }
 
   @Get('search/name')
@@ -55,7 +53,7 @@ export class EventController {
   }
 
   @Get(':id')
-  async get(@Param('id') id: number) {
+  async get(@Param() { id }: IdParams) {
     return this.eventService.get(id)
   }
 
@@ -66,12 +64,12 @@ export class EventController {
   }
 
   @Put(':id')
-  update(@Param('id') id: number, @Body() dto: UpdateEventDto) {
+  update(@Param() { id }: IdParams, @Body() dto: UpdateEventDto) {
     return this.eventService.update(id, dto)
   }
 
   @Delete(':id')
-  remove(@Param('id') id: number) {
+  remove(@Param() { id }: IdParams) {
     return this.eventService.remove(id)
   }
 
@@ -82,22 +80,22 @@ export class EventController {
    * @param id 事件id
    */
   @Get(':id/todo')
-  getTodos(@Param('id') id: number) {
+  getTodos(@Param() { id }: IdParams) {
     return this.eventService.getTodos(id)
   }
 
   @Post(':id/todo')
-  createTodo(@Param('id') id: number, @Body() dto: CreateTodoDto) {
+  createTodo(@Param() { id }: IdParams, @Body() dto: CreateTodoDto) {
     return this.eventService.createTodo(id, dto)
   }
 
   @Put(':id/todo')
-  updateTodo(@Param('id') id: number, @Body() dto: UpdateTodoDto) {
+  updateTodo(@Param() { id }: IdParams, @Body() dto: UpdateTodoDto) {
     return this.eventService.updateTodo(id, dto)
   }
 
   @Delete('todo/:id')
-  removeTodo(@Param('id') id: number) {
+  removeTodo(@Param() { id }: IdParams) {
     return this.eventService.removeTodo(id)
   }
 }

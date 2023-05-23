@@ -8,7 +8,7 @@ import { EventTodoEntity } from './entities/event-todo.entity'
 import type { CreateTodoDto } from './dto/todo/create-todo.dto'
 import type { UpdateTodoDto } from './dto/todo/update-todo.dto'
 import { RmqService } from '@app/rmq/rmq.service'
-import { PagenationDto } from '../dto/pagenation.dto'
+import { PagenationQuery } from '../dto/pagenation.query'
 import { GraphService } from '@app/graph'
 
 @Injectable()
@@ -37,7 +37,7 @@ export class EventService {
     return plainToInstance(EventEntity, results)
   }
 
-  async getAll(projectId: number, { size, page = 0 }: PagenationDto) {
+  async getAll(projectId: number, { size, page = 0 }: PagenationQuery) {
     const results = await this.prismaService.event.findMany({
       where: { projectId },
       skip: (size ?? 0) * page,
@@ -113,7 +113,7 @@ export class EventService {
           id: result.id,
           // 采用事件开始时间的时间戳作为排序依据
           order: dto.start.getTime(),
-          name: result.name,
+          name: `${result.serial}. ${result.name}`,
         },
       ],
       projectId,
@@ -134,7 +134,7 @@ export class EventService {
         {
           id: result.id,
           order: dto.start?.getTime(),
-          name: result.name,
+          name: dto.name && `${result.serial}. ${dto.name}`,
         },
       ],
       projectId: result.projectId,
